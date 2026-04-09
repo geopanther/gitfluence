@@ -1,5 +1,7 @@
 """Unit tests for sync2cf.postface."""
 
+# pylint: disable=duplicate-code
+
 from __future__ import annotations
 
 import re

@@ -16,8 +16,12 @@ from atlassian import Confluence
 
 pytestmark = pytest.mark.integration
 
-from sync2cf.config import Sync2CfContext  # noqa: E402
-from sync2cf.confluence import run_sync  # noqa: E402
+from sync2cf.config import (  # noqa: E402  # pylint: disable=wrong-import-position
+    Sync2CfContext,
+)
+from sync2cf.confluence import (  # noqa: E402  # pylint: disable=wrong-import-position
+    run_sync,
+)
 
 
 @pytest.fixture(scope="session")
@@ -35,7 +39,9 @@ def unique_prefix() -> str:
 
 
 @pytest.fixture()
-def test_repo(tmp_path: Path, unique_prefix: str) -> Path:
+def test_repo(  # pylint: disable=redefined-outer-name
+    tmp_path: Path, unique_prefix: str
+) -> Path:
     """Minimal git repo with two linked markdown files."""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
@@ -54,7 +60,7 @@ def test_repo(tmp_path: Path, unique_prefix: str) -> Path:
 
 
 @pytest.fixture()
-def synced_pages(
+def synced_pages(  # pylint: disable=redefined-outer-name
     test_repo, settings, unique_prefix, confluence_space, atlassian_client
 ):
     """Run sync and yield prefix; clean up pages afterwards."""
@@ -78,7 +84,7 @@ def synced_pages(
             )
             if page:
                 atlassian_client.remove_page(page["id"], recursive=True)
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             pass
     # Also try prefixed versions of folder pages
     for title in [
@@ -91,14 +97,16 @@ def synced_pages(
             )
             if page:
                 atlassian_client.remove_page(page["id"], recursive=True)
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             pass
 
 
 class TestIntegrationSync:
     """Tests that run a real sync against Confluence INT and verify results."""
 
-    def test_root_page_created(self, synced_pages, atlassian_client, confluence_space):
+    def test_root_page_created(
+        self, synced_pages, atlassian_client, confluence_space
+    ):  # pylint: disable=redefined-outer-name
         prefix = synced_pages
         page = atlassian_client.get_page_by_title(
             space=confluence_space,
@@ -107,7 +115,9 @@ class TestIntegrationSync:
         assert page is not None, f"Root page '{prefix} - {prefix} Root' not found"
         assert page["title"] == f"{prefix} - {prefix} Root"
 
-    def test_sub_page_created(self, synced_pages, atlassian_client, confluence_space):
+    def test_sub_page_created(
+        self, synced_pages, atlassian_client, confluence_space
+    ):  # pylint: disable=redefined-outer-name
         prefix = synced_pages
         page = atlassian_client.get_page_by_title(
             space=confluence_space,
@@ -115,7 +125,7 @@ class TestIntegrationSync:
         )
         assert page is not None, f"Sub page '{prefix} - {prefix} Sub' not found"
 
-    def test_root_page_has_content(
+    def test_root_page_has_content(  # pylint: disable=redefined-outer-name
         self, synced_pages, atlassian_client, confluence_space
     ):
         prefix = synced_pages
@@ -128,7 +138,7 @@ class TestIntegrationSync:
         body = page["body"]["storage"]["value"]
         assert "Root page content" in body
 
-    def test_page_is_child_of_homepage(
+    def test_page_is_child_of_homepage(  # pylint: disable=redefined-outer-name
         self, synced_pages, atlassian_client, confluence_space
     ):
         prefix = synced_pages
@@ -147,7 +157,7 @@ class TestIntegrationSync:
             f"Children: {child_titles[:10]}"
         )
 
-    def test_dry_run_creates_nothing(
+    def test_dry_run_creates_nothing(  # pylint: disable=redefined-outer-name
         self, test_repo, settings, atlassian_client, confluence_space
     ):
         dry_prefix = f"dry-{uuid.uuid4().hex[:8]}"

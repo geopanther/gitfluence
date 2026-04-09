@@ -109,7 +109,7 @@ def main(argv: list[str] | None = None) -> None:
     preface_markup = ""
     preface_ref = _PACKAGE_FILES.joinpath("preface.md")
     if preface_ref.is_file():
-        preface_markup = md2cf.document.parse_page(
+        preface_markup = md2cf.document.parse_page(  # pylint: disable=no-member
             [preface_ref.read_text(encoding="utf-8")]
         ).body
 
@@ -119,7 +119,9 @@ def main(argv: list[str] | None = None) -> None:
         postface_md = render_postface(
             postface_ref.read_text(encoding="utf-8"), git_info
         )
-        postface_markup = md2cf.document.parse_page([postface_md]).body
+        postface_markup = md2cf.document.parse_page(  # pylint: disable=no-member
+            [postface_md]
+        ).body
 
     # ── Run ───────────────────────────────────────────────────────────
     run_sync(ctx, preface_markup, postface_markup)

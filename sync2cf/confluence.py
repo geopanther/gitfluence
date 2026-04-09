@@ -116,7 +116,7 @@ def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> 
             if page.file_path is not None:
                 path_to_page[page.file_path.resolve()] = final_page
 
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             log.exception("Failed to upsert page '%s'", page.title)
             something_went_wrong = True
             break
@@ -134,7 +134,7 @@ def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> 
 
 def _collect_pages(repo_path: Path) -> list[Page]:
     return list(
-        md2cf.document.get_pages_from_directory(
+        md2cf.document.get_pages_from_directory(  # pylint: disable=no-member
             repo_path,
             collapse_single_pages=True,
             skip_empty=True,
@@ -213,7 +213,7 @@ def _resolve_relative_links(
     confluence: MinimalConfluence,
     pages: list[Page],
     path_to_page: dict[Path, Page | None],
-    ctx: Sync2CfContext,
+    ctx: Sync2CfContext,  # pylint: disable=unused-argument
 ) -> None:
     for page in pages:
         if page.file_path is None:
@@ -249,5 +249,5 @@ def _resolve_relative_links(
                     replace_all_labels=False,
                     minor_edit=True,
                 )
-            except Exception:
+            except Exception:  # pylint: disable=broad-exception-caught
                 log.exception("Failed to update relative links for '%s'", page.title)
