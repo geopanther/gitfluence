@@ -18,7 +18,6 @@ from sync2cf.confluence import (
     _validate_relative_links,
 )
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────
 
 

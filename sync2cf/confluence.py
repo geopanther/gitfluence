@@ -6,8 +6,8 @@ import logging
 from pathlib import Path
 
 import md2cf.document
-from md2cf.api import MinimalConfluence
 from md2cf.anchor import rewrite_page_anchors
+from md2cf.api import MinimalConfluence
 from md2cf.document import Page
 from md2cf.upsert import upsert_attachment, upsert_page
 
@@ -250,6 +250,4 @@ def _resolve_relative_links(
                     minor_edit=True,
                 )
             except Exception:
-                log.exception(
-                    "Failed to update relative links for '%s'", page.title
-                )
+                log.exception("Failed to update relative links for '%s'", page.title)

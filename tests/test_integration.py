@@ -46,9 +46,7 @@ def test_repo(tmp_path: Path, unique_prefix: str) -> Path:
     )
     doc_dir = repo_dir / "doc"
     doc_dir.mkdir()
-    (doc_dir / "sub.md").write_text(
-        f"# {unique_prefix} Sub\n\nSub page content.\n"
-    )
+    (doc_dir / "sub.md").write_text(f"# {unique_prefix} Sub\n\nSub page content.\n")
 
     repo = gitmodule.Repo.init(repo_dir)
     repo.index.add(["README.md", "doc/sub.md"])
@@ -84,8 +82,10 @@ def synced_pages(
         except Exception:
             pass
     # Also try prefixed versions of folder pages
-    for title in [f"{unique_prefix} - {unique_prefix} Root",
-                  f"{unique_prefix} - {unique_prefix} Sub"]:
+    for title in [
+        f"{unique_prefix} - {unique_prefix} Root",
+        f"{unique_prefix} - {unique_prefix} Sub",
+    ]:
         try:
             page = atlassian_client.get_page_by_title(
                 space=confluence_space, title=title
@@ -99,9 +99,7 @@ def synced_pages(
 class TestIntegrationSync:
     """Tests that run a real sync against Confluence INT and verify results."""
 
-    def test_root_page_created(
-        self, synced_pages, atlassian_client, confluence_space
-    ):
+    def test_root_page_created(self, synced_pages, atlassian_client, confluence_space):
         prefix = synced_pages
         page = atlassian_client.get_page_by_title(
             space=confluence_space,
@@ -110,9 +108,7 @@ class TestIntegrationSync:
         assert page is not None, f"Root page '{prefix} - {prefix} Root' not found"
         assert page["title"] == f"{prefix} - {prefix} Root"
 
-    def test_sub_page_created(
-        self, synced_pages, atlassian_client, confluence_space
-    ):
+    def test_sub_page_created(self, synced_pages, atlassian_client, confluence_space):
         prefix = synced_pages
         page = atlassian_client.get_page_by_title(
             space=confluence_space,

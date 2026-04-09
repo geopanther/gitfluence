@@ -98,9 +98,7 @@ class TestSync2CfContext:
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: False})())
         s = self._make_settings(confluence_prod_token=None)
         with pytest.raises(SystemExit, match="CONFLUENCE_PROD_TOKEN"):
-            Sync2CfContext(
-                s, repo_path=Path("/tmp"), use_prod=True, branch_name="main"
-            )
+            Sync2CfContext(s, repo_path=Path("/tmp"), use_prod=True, branch_name="main")
 
     def test_dry_run_flag(self):
         s = self._make_settings()

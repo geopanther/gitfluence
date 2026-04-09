@@ -32,7 +32,8 @@ def main(argv: list[str] | None = None) -> None:
         help="Root directory of the git working tree to sync.",
     )
     parser.add_argument(
-        "-n", "--dry-run",
+        "-n",
+        "--dry-run",
         action="store_true",
         help="Print what would be done without calling the Confluence API.",
     )
@@ -49,7 +50,8 @@ def main(argv: list[str] | None = None) -> None:
         help="Override auto-detected prefix (default: branch name on non-prod).",
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Enable debug logging.",
     )

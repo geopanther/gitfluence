@@ -68,7 +68,8 @@ class Sync2CfContext:
         else:
             self.write_host = int_host
             self.write_token = self._require_token(
-                int_token, "CONFLUENCE_INT_TOKEN (falling back to CONFLUENCE_PROD_TOKEN)"
+                int_token,
+                "CONFLUENCE_INT_TOKEN (falling back to CONFLUENCE_PROD_TOKEN)",
             )
             self.prefix = branch_name
 
@@ -86,9 +87,7 @@ class Sync2CfContext:
 
     # ── helpers ────────────────────────────────────────────────────────
     @staticmethod
-    def _require_token(
-        token: Optional[SecretStr], env_name: str
-    ) -> SecretStr:
+    def _require_token(token: Optional[SecretStr], env_name: str) -> SecretStr:
         if token is not None:
             return token
         if not sys.stdin.isatty():
