@@ -15,10 +15,9 @@ import pytest
 from atlassian import Confluence
 
 pytestmark = pytest.mark.integration
-from pydantic import SecretStr
 
-from sync2cf.config import Sync2CfContext, Sync2CfSettings
-from sync2cf.confluence import run_sync
+from sync2cf.config import Sync2CfContext  # noqa: E402
+from sync2cf.confluence import run_sync  # noqa: E402
 
 
 @pytest.fixture(scope="session")

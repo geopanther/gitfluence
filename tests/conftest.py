@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from pydantic import SecretStr
 
-from sync2cf.config import Sync2CfContext, Sync2CfSettings
+from sync2cf.config import Sync2CfSettings
 
 
 def _require_env(name: str) -> str:

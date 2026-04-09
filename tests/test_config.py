@@ -34,13 +34,13 @@ class TestSync2CfSettings:
 class TestSync2CfContext:
     @staticmethod
     def _make_settings(**overrides):
-        defaults = dict(
-            confluence_prod_host="https://prod.example.com/api",
-            confluence_prod_token=SecretStr("tok-prod"),
-            confluence_int_host=None,
-            confluence_int_token=None,
-            confluence_space="SP",
-        )
+        defaults = {
+            "confluence_prod_host": "https://prod.example.com/api",
+            "confluence_prod_token": SecretStr("tok-prod"),
+            "confluence_int_host": None,
+            "confluence_int_token": None,
+            "confluence_space": "SP",
+        }
         defaults.update(overrides)
         return Sync2CfSettings(**defaults)
 
