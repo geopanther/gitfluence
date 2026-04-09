@@ -52,7 +52,7 @@ Add a workflow to your repo that checks out sync2cf and runs it against your own
 
 ```yaml
 # .github/workflows/sync-docs.yml
-name: Sync Docs to Confluence
+name: Sync2Confluence
 
 on:
   push:
@@ -89,7 +89,7 @@ jobs:
       - name: Install sync2cf
         run: uv sync --frozen --project .sync2cf
 
-      - name: Sync docs to Confluence
+      - name: Sync2Confluence
         env:
           CONFLUENCE_PROD_TOKEN: ${{ secrets.CONFLUENCE_PROD_TOKEN }}
           CONFLUENCE_SPACE: ${{ vars.CONFLUENCE_SPACE }}
