@@ -11,16 +11,9 @@ disable=
     C0115,  # missing-class-docstring
     C0116,  # missing-function-docstring
     C0301,  # line-too-long (handled by black)
-    C0413,  # wrong-import-position (needed for pytestmark)
-    C0415,  # import-outside-toplevel (used in fixtures)
-    E1101,  # no-member (false positive for md2cf.document)
-    R0801,  # duplicate-code (test data)
     R0903,  # too-few-public-methods
     R0913,  # too-many-arguments
     W0511,  # fixme
-    W0613,  # unused-argument (fixtures, callbacks)
-    W0621,  # redefined-outer-name (pytest fixtures)
-    W0718,  # broad-exception-caught (intentional)
     W1203,  # logging-fstring-interpolation
 
 [FORMAT]
