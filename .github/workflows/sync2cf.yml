@@ -1,0 +1,71 @@
+# Self-sync: publishes this repo's own docs to Confluence as an example.
+name: Sync Docs to Confluence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'README.md'
+      - 'doc/**'
+      - '.github/workflows/sync2cf.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'README.md'
+      - 'doc/**'
+      - '.github/workflows/sync2cf.yml'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (no Confluence writes)'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync-docs:
+    runs-on: bmw-ubuntu-24.04-medium
+    timeout-minutes: 30
+    concurrency:
+      group: sync-docs-${{ github.repository }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Verify Confluence token
+        env:
+          CONFLUENCE_PROD_TOKEN: ${{ secrets.CONFLUENCE_PROD_TOKEN }}
+        run: |
+          if [ -z "$CONFLUENCE_PROD_TOKEN" ]; then
+            echo "::error::CONFLUENCE_PROD_TOKEN secret is not configured."
+            exit 1
+          fi
+
+      - name: Sync docs to Confluence
+        env:
+          CONFLUENCE_PROD_HOST: ${{ vars.CONFLUENCE_PROD_HOST || 'https://atc.bmwgroup.net/confluence/rest/api' }}
+          CONFLUENCE_PROD_TOKEN: ${{ secrets.CONFLUENCE_PROD_TOKEN }}
+          CONFLUENCE_INT_HOST: ${{ vars.CONFLUENCE_INT_HOST }}
+          CONFLUENCE_INT_TOKEN: ${{ secrets.CONFLUENCE_INT_TOKEN }}
+          CONFLUENCE_READONLY_HOST: ${{ vars.CONFLUENCE_READONLY_HOST }}
+          CONFLUENCE_READONLY_TOKEN: ${{ secrets.CONFLUENCE_READONLY_TOKEN }}
+          CONFLUENCE_SPACE: ${{ vars.CONFLUENCE_SPACE }}
+        run: |
+          DRY_RUN_FLAG=""
+          if [ "${{ inputs.dry_run }}" = "true" ] || [ "${{ github.event_name }}" = "pull_request" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+          uv run sync2cf $DRY_RUN_FLAG .
