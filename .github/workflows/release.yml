@@ -24,7 +24,11 @@ jobs:
       - name: Extract version
         id: version
         run: |
-          VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          VERSION=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid version format in pyproject.toml: $VERSION"
+            exit 1
+          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "Detected version: $VERSION"
@@ -37,7 +41,15 @@ jobs:
           fi
 
       - name: Build package
-        run: uv build
+        run: |
+          rm -rf dist/
+          uv build
+
+      - name: Verify build artifacts
+        run: |
+          ls dist/*.whl dist/*.tar.gz
+          echo "Build artifacts:"
+          ls -la dist/
 
       - name: Create GitHub Release
         env:
