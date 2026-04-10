@@ -15,12 +15,6 @@ on:
       - 'doc/**'
       - '.github/workflows/sync2cf.yml'
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: 'Dry run (no Confluence writes)'
-        type: boolean
-        required: false
-        default: false
 
 permissions:
   contents: read
@@ -45,15 +39,6 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --frozen
-
-      - name: Verify Confluence token
-        env:
-          CONFLUENCE_PROD_TOKEN: ${{ secrets.CONFLUENCE_PROD_TOKEN }}
-        run: |
-          if [ -z "$CONFLUENCE_PROD_TOKEN" ]; then
-            echo "::error::CONFLUENCE_PROD_TOKEN secret is not configured."
-            exit 1
-          fi
 
       - name: Sync2Confluence
         env:
