@@ -727,7 +727,6 @@ dependencies = [
     { name = "md2cf" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
-    { name = "python-dotenv" },
 ]
 
 [package.optional-dependencies]
@@ -752,7 +751,6 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.0" },
     { name = "pylint", marker = "extra == 'dev'", specifier = ">=3.3" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "python-dotenv", specifier = ">=1.0" },
 ]
 provides-extras = ["dev"]
 

@@ -21,13 +21,13 @@ class TestCLI:
             main([str(bad)])
 
     def test_dry_run_no_api_calls(self, tmp_repo, monkeypatch):
-        monkeypatch.setenv("CONFLUENCE_PROD_HOST", "https://int.example.com/api")
-        monkeypatch.setenv("CONFLUENCE_PROD_TOKEN", "fake-token")
-        monkeypatch.setenv("CONFLUENCE_SPACE", "TESTSPACE")
-        monkeypatch.delenv("CONFLUENCE_INT_HOST", raising=False)
+        monkeypatch.delenv("CONFLUENCE_PROD_TOKEN", raising=False)
         monkeypatch.delenv("CONFLUENCE_INT_TOKEN", raising=False)
+        monkeypatch.delenv("CONFLUENCE_READONLY_TOKEN", raising=False)
+        monkeypatch.delenv("CONFLUENCE_INT_HOST", raising=False)
         with patch("sync2cf.__main__.run_sync") as mock_sync:
             main(["--dry-run", str(tmp_repo)])
             mock_sync.assert_called_once()
             ctx = mock_sync.call_args[0][0]
             assert ctx.dry_run is True
+            assert ctx.write_token.get_secret_value() == "dummy"

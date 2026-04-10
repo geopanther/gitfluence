@@ -20,14 +20,25 @@ python -m sync2cf --prefix "DEV" .       # override auto-prefix
 | Variable | Default | Description |
 |---|---|---|
 | `CONFLUENCE_PROD_HOST` | `https://atc.bmwgroup.net/confluence/rest/api` | Production Confluence REST API base URL |
-| `CONFLUENCE_PROD_TOKEN` | *(prompt if interactive)* | PAT for production writes |
-| `CONFLUENCE_INT_HOST` | Falls back to `CONFLUENCE_PROD_HOST` | Integration Confluence REST API base URL |
-| `CONFLUENCE_INT_TOKEN` | Falls back to `CONFLUENCE_PROD_TOKEN` | PAT for integration writes |
+| `CONFLUENCE_PROD_TOKEN` | `dummy` on `--dry-run`, otherwise prompt if interactive | PAT for production writes |
+| `CONFLUENCE_INT_HOST` | `https://atc-int.bmwgroup.net/confluence/rest/api` | Integration Confluence REST API base URL |
+| `CONFLUENCE_INT_TOKEN` | `dummy` on `--dry-run`, otherwise prompt if interactive | PAT for integration writes |
 | `CONFLUENCE_READONLY_HOST` | — | Read-only Confluence host (all GET requests routed here) |
-| `CONFLUENCE_READONLY_TOKEN` | — | PAT for read-only host |
-| `CONFLUENCE_SPACE` | *(required)* | Confluence space key |
+| `CONFLUENCE_READONLY_TOKEN` | Falls back to `CONFLUENCE_PROD_TOKEN` | PAT for read-only host |
+| `CONFLUENCE_SPACE` | `DRY_RUN` on `--dry-run`, otherwise prompt if interactive | Confluence space key |
 
-Values can also be placed in a `.env` file at the working directory.
+`sync2cf` reads environment variables only. No `.env` file support.
+
+Token behavior:
+
+- `--dry-run`: missing tokens default to `dummy`
+- `--dry-run`: missing space defaults to `DRY_RUN`
+- interactive non-dry-run: missing required token or space prompts on tty
+- non-interactive non-dry-run: missing required token fails fast
+
+Read-only routing is disabled unless `CONFLUENCE_READONLY_HOST` is explicitly set.
+
+Prompted tokens are exported into current `sync2cf` process environment only. Shell parent environment cannot be mutated by a child process.
 
 ## Prod vs Integration Logic
 
@@ -36,7 +47,7 @@ Values can also be placed in a `.env` file at the working directory.
 | On default branch, clean, up-to-date with remote | **Prod** (`CONFLUENCE_PROD_HOST`) | *(none)* |
 | Feature branch / dirty tree / behind remote | **Integration** (`CONFLUENCE_INT_HOST`, falls back to Prod) | Branch name |
 
-When `CONFLUENCE_INT_HOST` / `CONFLUENCE_INT_TOKEN` are not set, they default to their `PROD` counterparts — so a single token is enough if you use the same Confluence instance for both.
+`CONFLUENCE_INT_HOST` falls back to `CONFLUENCE_PROD_HOST` when not set. `CONFLUENCE_INT_TOKEN` does not fall back to prod on real runs because prod and int credentials may differ. `CONFLUENCE_READONLY_TOKEN` still falls back to `CONFLUENCE_PROD_TOKEN`.
 
 ## Page Hierarchy
 
@@ -112,7 +123,7 @@ uv sync --extra dev  # include dev/test deps
 sync2cf/
 ├── __init__.py
 ├── __main__.py              # CLI entry point
-├── config.py                # Pydantic settings from env vars / .env
+├── config.py                # Pydantic settings from env vars
 ├── confluence.py            # md2cf orchestration
 ├── git_info.py              # Git branch, remote, dirty detection
 ├── postface.py              # Postface template rendering
