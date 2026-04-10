@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import SecretStr
@@ -13,6 +13,7 @@ from sync2cf.config import Sync2CfContext
 from sync2cf.confluence import (
     _build_path_map,
     _collect_pages,
+    _ensure_integration_root,
     _preprocess_page,
     _validate_relative_links,
 )
@@ -63,6 +64,23 @@ class TestPreprocessPage:
         _preprocess_page(page, ctx, "", "", space_info)
         assert page.parent_id == "12345"
         assert page.space == "TEST"
+
+    def test_top_level_uses_int_root(self):
+        page = _make_page(parent_title=None, parent_id=None)
+        ctx = _make_ctx(prefix="feat/x")
+        space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
+        root = SimpleNamespace(id="99")
+        _preprocess_page(page, ctx, "", "", space_info, integration_root=root)
+        assert page.parent_id == "99"
+
+    def test_int_root_skipped_for_child(self):
+        page = _make_page(parent_title="Parent", parent_id=None)
+        ctx = _make_ctx(prefix="feat/x")
+        space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
+        root = SimpleNamespace(id="99")
+        _preprocess_page(page, ctx, "", "", space_info, integration_root=root)
+        assert page.parent_id is None
+        assert page.parent_title == "feat/x - Parent"
 
     def test_prefix_applied_to_title(self):
         page = _make_page(title="README")
@@ -144,3 +162,37 @@ class TestCollectPages:
     def test_collect_empty_dir(self, tmp_path):
         pages = _collect_pages(tmp_path)
         assert not pages
+
+
+class TestEnsureIntegrationRoot:
+    def test_creates_root_under_homepage(self):
+        confluence = MagicMock()
+        result_mock = MagicMock()
+        result_mock.action.name = "created"
+        result_mock.response.id = "42"
+
+        with patch(
+            "sync2cf.confluence.upsert_page", return_value=result_mock
+        ) as mock_upsert:
+            ctx = _make_ctx(prefix="feat/x")
+            ctx.repo_path = Path("/tmp/my-repo")
+            space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
+            result = _ensure_integration_root(confluence, space_info, ctx)
+            assert result.id == "42"
+            mock_upsert.assert_called_once()
+
+    def test_root_title_is_repo_dirname(self):
+        confluence = MagicMock()
+        result_mock = MagicMock()
+        result_mock.action.name = "existed"
+
+        with patch(
+            "sync2cf.confluence.upsert_page", return_value=result_mock
+        ) as mock_upsert:
+            ctx = _make_ctx(prefix="feat/x")
+            ctx.repo_path = Path("/work/git/my-awesome-repo")
+            space_info = SimpleNamespace(homepage=SimpleNamespace(id="5"))
+            _ensure_integration_root(confluence, space_info, ctx)
+            page_arg = mock_upsert.call_args.kwargs["page"]
+            assert page_arg.title == "my-awesome-repo"
+            assert page_arg.parent_id == "5"

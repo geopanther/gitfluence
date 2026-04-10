@@ -51,6 +51,10 @@ In CI (GitHub Actions), `pull_request` events check out a merge commit (detached
 
 All root-level pages from the repo are created as **children of the Confluence space's home page**. Subdirectories become nested child pages, preserving the repo's folder structure. The space home page itself is never modified.
 
+### Integration Root Page
+
+In integration mode (feature branches), an empty root page named after the repository directory (e.g. `my-repo`) is created under the space's home page. All integration pages are placed as children of this root page instead of directly under the homepage. This makes cleanup easy: delete the root page and all its descendants to remove all integration artifacts.
+
 ## Using sync2cf in Your Repo
 
 Add a workflow to your repo that checks out sync2cf and runs it against your own working tree:
