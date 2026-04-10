@@ -28,7 +28,9 @@ class TestSync2CfSettings:
 
         assert s.confluence_prod_host == "https://atc.bmwgroup.net/confluence/rest/api"
         assert s.confluence_prod_token is None
-        assert s.confluence_int_host == "https://atc-int.bmwgroup.net/confluence/rest/api"
+        assert (
+            s.confluence_int_host == "https://atc-int.bmwgroup.net/confluence/rest/api"
+        )
         assert s.confluence_int_token is None
         assert s.confluence_readonly_host is None
         assert s.confluence_readonly_token is None
@@ -150,7 +152,7 @@ class TestSync2CfContext:
         assert ctx.write_token.get_secret_value() == "dummy"
         assert ctx.read_token is None
 
-    def test_missing_token_interactive_prompts_and_exports(self, monkeypatch):
+    def test_interactive_prod_token_prompt_exports(self, monkeypatch):
         prompts = []
 
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: True})())
@@ -159,7 +161,9 @@ class TestSync2CfContext:
             lambda prompt: prompts.append(prompt) or "tok-prompt",
         )
         monkeypatch.delenv("CONFLUENCE_PROD_TOKEN", raising=False)
-        s = self._make_settings(confluence_prod_token=None, confluence_readonly_token=None)
+        s = self._make_settings(
+            confluence_prod_token=None, confluence_readonly_token=None
+        )
         ctx = Sync2CfContext(
             s,
             repo_path=Path("/tmp"),
@@ -183,7 +187,7 @@ class TestSync2CfContext:
                 branch_name="feature/x",
             )
 
-    def test_missing_int_token_interactive_prompts_and_exports(self, monkeypatch):
+    def test_interactive_int_token_prompt_exports(self, monkeypatch):
         prompts = []
 
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: True})())
@@ -220,7 +224,7 @@ class TestSync2CfContext:
         )
         assert ctx.space == "DRY_RUN"
 
-    def test_missing_space_interactive_prompts_and_exports(self, monkeypatch):
+    def test_interactive_space_prompt_exports(self, monkeypatch):
         prompts = []
 
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: True})())

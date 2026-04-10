@@ -14,7 +14,6 @@ from typing import Optional
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 DEFAULT_DUMMY_TOKEN = "dummy"
 DEFAULT_DRY_RUN_SPACE = "DRY_RUN"
 
@@ -32,7 +31,9 @@ class Sync2CfSettings(BaseSettings):
     confluence_prod_host: str = "https://atc.bmwgroup.net/confluence/rest/api"
     confluence_prod_token: Optional[SecretStr] = None
 
-    confluence_int_host: Optional[str] = "https://atc-int.bmwgroup.net/confluence/rest/api"
+    confluence_int_host: Optional[str] = (
+        "https://atc-int.bmwgroup.net/confluence/rest/api"
+    )
     confluence_int_token: Optional[SecretStr] = None
 
     confluence_readonly_host: Optional[str] = None
