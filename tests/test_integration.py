@@ -138,7 +138,7 @@ class TestIntegrationSync:
         body = page["body"]["storage"]["value"]
         assert "Root page content" in body
 
-    def test_integration_root_page_is_child_of_homepage(
+    def test_int_root_under_homepage(  # pylint: disable=unused-argument
         self, synced_pages, atlassian_client, confluence_space, test_repo
     ):  # pylint: disable=redefined-outer-name
         repo_name = test_repo.name
@@ -155,7 +155,7 @@ class TestIntegrationSync:
             f"Children: {child_titles[:10]}"
         )
 
-    def test_pages_are_children_of_integration_root(
+    def test_pages_under_int_root(
         self, synced_pages, atlassian_client, confluence_space, test_repo
     ):  # pylint: disable=redefined-outer-name
         prefix = synced_pages

@@ -38,7 +38,7 @@ def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> 
     if ctx.dry_run:
         # In dry-run mode we skip Confluence API calls entirely
         for page in pages:
-            _preprocess_page(page, ctx, preface_markup, postface_markup, None, None)
+            _preprocess_page(page, ctx, preface_markup, postface_markup, None)
             log.info("[dry-run] Would upsert: %s", page.title)
         return
 
@@ -52,13 +52,22 @@ def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> 
     integration_root = None
     if ctx.prefix:
         integration_root = _ensure_integration_root(
-            confluence, space_info, ctx,
+            confluence,
+            space_info,
+            ctx,
         )
 
     # ── 4. Pre-process & upsert each page ─────────────────────────────
     something_went_wrong = False
     for page in pages:
-        _preprocess_page(page, ctx, preface_markup, postface_markup, space_info, integration_root)
+        _preprocess_page(
+            page,
+            ctx,
+            preface_markup,
+            postface_markup,
+            space_info,
+            integration_root=integration_root,
+        )
 
         try:
             result = upsert_page(
@@ -188,6 +197,7 @@ def _preprocess_page(
     preface_markup: str,
     postface_markup: str,
     space_info,
+    *,
     integration_root=None,
 ) -> None:
     page.original_title = page.title
