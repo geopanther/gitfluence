@@ -15,7 +15,6 @@ dependencies = [
     "gitpython>=3.1.46",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
-    "python-dotenv>=1.0",
 ]
 
 [project.optional-dependencies]

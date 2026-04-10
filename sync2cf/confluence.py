@@ -16,46 +16,6 @@ from sync2cf.config import Sync2CfContext
 log = logging.getLogger(__name__)
 
 
-# ── Read/Write routing ────────────────────────────────────────────────────
-
-
-class ReadWriteConfluence(MinimalConfluence):
-    """Routes read operations to an optional read-only Confluence instance.
-
-    Write operations always go through the primary (write) host.
-    If no read host is configured, everything goes through the write host.
-    """
-
-    def __init__(self, ctx: Sync2CfContext) -> None:
-        super().__init__(
-            host=ctx.write_host,
-            token=ctx.write_token.get_secret_value(),
-        )
-        if ctx.read_host and ctx.read_token:
-            self._reader = MinimalConfluence(
-                host=ctx.read_host,
-                token=ctx.read_token.get_secret_value(),
-            )
-        else:
-            self._reader = self  # type: ignore[assignment]
-
-    # Override read-only methods to use the reader instance
-    def get_page(self, *args, **kwargs):
-        if self._reader is not self:
-            return self._reader.get_page(*args, **kwargs)
-        return super().get_page(*args, **kwargs)
-
-    def get_space(self, *args, **kwargs):
-        if self._reader is not self:
-            return self._reader.get_space(*args, **kwargs)
-        return super().get_space(*args, **kwargs)
-
-    def get_attachment(self, *args, **kwargs):
-        if self._reader is not self:
-            return self._reader.get_attachment(*args, **kwargs)
-        return super().get_attachment(*args, **kwargs)
-
-
 # ── Main orchestration ────────────────────────────────────────────────────
 
 
@@ -82,7 +42,10 @@ def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> 
             log.info("[dry-run] Would upsert: %s", page.title)
         return
 
-    confluence = ReadWriteConfluence(ctx)
+    confluence = MinimalConfluence(
+        host=ctx.write_host,
+        token=ctx.write_token.get_secret_value(),
+    )
     space_info = confluence.get_space(ctx.space, additional_expansions=["homepage"])
 
     # ── 4. Pre-process & upsert each page ─────────────────────────────

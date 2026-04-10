@@ -15,12 +15,6 @@ on:
       - 'doc/**'
       - '.github/workflows/sync2cf.yml'
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: 'Dry run (no Confluence writes)'
-        type: boolean
-        required: false
-        default: false
 
 permissions:
   contents: read
@@ -46,27 +40,16 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
-      - name: Verify Confluence token
-        env:
-          CONFLUENCE_PROD_TOKEN: ${{ secrets.CONFLUENCE_PROD_TOKEN }}
-        run: |
-          if [ -z "$CONFLUENCE_PROD_TOKEN" ]; then
-            echo "::error::CONFLUENCE_PROD_TOKEN secret is not configured."
-            exit 1
-          fi
-
       - name: Sync2Confluence
         env:
-          CONFLUENCE_PROD_HOST: ${{ vars.CONFLUENCE_PROD_HOST || 'https://atc.bmwgroup.net/confluence/rest/api' }}
+          CONFLUENCE_PROD_HOST: ${{ vars.CONFLUENCE_PROD_HOST }}
           CONFLUENCE_PROD_TOKEN: ${{ secrets.CONFLUENCE_PROD_TOKEN }}
           CONFLUENCE_INT_HOST: ${{ vars.CONFLUENCE_INT_HOST }}
           CONFLUENCE_INT_TOKEN: ${{ secrets.CONFLUENCE_INT_TOKEN }}
-          CONFLUENCE_READONLY_HOST: ${{ vars.CONFLUENCE_READONLY_HOST }}
-          CONFLUENCE_READONLY_TOKEN: ${{ secrets.CONFLUENCE_READONLY_TOKEN }}
           CONFLUENCE_SPACE: ${{ vars.CONFLUENCE_SPACE }}
         run: |
           DRY_RUN_FLAG=""
-          if [ "${{ inputs.dry_run }}" = "true" ] || [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
             DRY_RUN_FLAG="--dry-run"
           fi
           uv run sync2cf $DRY_RUN_FLAG .

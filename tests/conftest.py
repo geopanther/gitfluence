@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import getpass
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -11,10 +13,27 @@ from pydantic import SecretStr
 from sync2cf.config import Sync2CfSettings
 
 
+def _prompt_text(name: str) -> str:
+    return f"{name} (or set before run): "
+
+
 def _require_env(name: str) -> str:
     val = os.environ.get(name)
+    if val:
+        return val
+
+    if not sys.stdin.isatty():
+        pytest.skip(f"{name} not set — required for integration tests")
+
+    if name.endswith("TOKEN"):
+        val = getpass.getpass(_prompt_text(name))
+    else:
+        val = input(_prompt_text(name)).strip()
+
     if not val:
         pytest.skip(f"{name} not set — required for integration tests")
+
+    os.environ[name] = val
     return val
 
 
