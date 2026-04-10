@@ -33,3 +33,10 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: sync2cf
+        name: sync2cf
+        entry: uv run sync2cf
+        language: system
+        pass_filenames: false
+        args: ["--dry-run", "."]
+        always_run: true
