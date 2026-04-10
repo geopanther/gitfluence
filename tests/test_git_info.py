@@ -78,6 +78,13 @@ class TestGetGitInfo:
         # Should not crash; branch_name is a commit hash fragment
         assert len(info.branch_name) >= 7
 
+    def test_detached_head_github_pr(self, tmp_repo, monkeypatch):
+        repo = gitmodule.Repo(tmp_repo)
+        repo.head.reference = repo.head.commit
+        monkeypatch.setenv("GITHUB_HEAD_REF", "feature/my-pr")
+        info = get_git_info(tmp_repo)
+        assert info.branch_name == "feature/my-pr"
+
     def test_feature_branch(self, tmp_repo: Path):
         repo = gitmodule.Repo(tmp_repo)
         repo.create_head("feature/test").checkout()

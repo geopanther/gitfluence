@@ -45,6 +45,8 @@ Prompted tokens are exported into current `sync2cf` process environment only. Sh
 
 `CONFLUENCE_INT_HOST` falls back to `CONFLUENCE_PROD_HOST` when not set. `CONFLUENCE_INT_TOKEN` does not fall back to prod on real runs because prod and int credentials may differ.
 
+In CI (GitHub Actions), `pull_request` events check out a merge commit (detached HEAD). sync2cf reads `GITHUB_HEAD_REF` to resolve the actual branch name for the page prefix.
+
 ## Page Hierarchy
 
 All root-level pages from the repo are created as **children of the Confluence space's home page**. Subdirectories become nested child pages, preserving the repo's folder structure. The space home page itself is never modified.

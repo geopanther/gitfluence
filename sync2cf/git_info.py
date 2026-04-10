@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -37,8 +38,9 @@ def get_git_info(repo_path: Path) -> GitInfo:
     try:
         branch_name = repo.active_branch.name
     except TypeError:
-        # detached HEAD
-        branch_name = str(repo.head.commit)[:12]
+        # detached HEAD — common in CI merge commits.
+        # Use GITHUB_HEAD_REF (set on pull_request events) if available.
+        branch_name = os.environ.get("GITHUB_HEAD_REF") or str(repo.head.commit)[:12]
 
     # ── default branch (from origin/HEAD or fallback) ──────────────────
     default_branch = _detect_default_branch(repo)
