@@ -152,7 +152,7 @@ class TestSync2CfContext:
         assert ctx.write_token.get_secret_value() == "dummy"
         assert ctx.read_token is None
 
-    def test_interactive_prod_token_prompt_exports(self, monkeypatch):
+    def test_prompt_prod_token_exports(self, monkeypatch):
         prompts = []
 
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: True})())
@@ -187,7 +187,7 @@ class TestSync2CfContext:
                 branch_name="feature/x",
             )
 
-    def test_interactive_int_token_prompt_exports(self, monkeypatch):
+    def test_prompt_int_token_exports(self, monkeypatch):
         prompts = []
 
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: True})())
@@ -224,7 +224,7 @@ class TestSync2CfContext:
         )
         assert ctx.space == "DRY_RUN"
 
-    def test_interactive_space_prompt_exports(self, monkeypatch):
+    def test_prompt_space_exports(self, monkeypatch):
         prompts = []
 
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: True})())
