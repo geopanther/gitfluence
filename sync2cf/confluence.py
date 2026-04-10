@@ -38,7 +38,7 @@ def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> 
     if ctx.dry_run:
         # In dry-run mode we skip Confluence API calls entirely
         for page in pages:
-            _preprocess_page(page, ctx, preface_markup, postface_markup, None)
+            _preprocess_page(page, ctx, preface_markup, postface_markup, None, None)
             log.info("[dry-run] Would upsert: %s", page.title)
         return
 
@@ -48,10 +48,17 @@ def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> 
     )
     space_info = confluence.get_space(ctx.space, additional_expansions=["homepage"])
 
+    # ── 3b. Integration root page ─────────────────────────────────────
+    integration_root = None
+    if ctx.prefix:
+        integration_root = _ensure_integration_root(
+            confluence, space_info, ctx,
+        )
+
     # ── 4. Pre-process & upsert each page ─────────────────────────────
     something_went_wrong = False
     for page in pages:
-        _preprocess_page(page, ctx, preface_markup, postface_markup, space_info)
+        _preprocess_page(page, ctx, preface_markup, postface_markup, space_info, integration_root)
 
         try:
             result = upsert_page(
@@ -141,12 +148,47 @@ def _validate_relative_links(
         raise SystemExit("ERROR: Invalid relative links detected.")
 
 
+def _ensure_integration_root(
+    confluence: MinimalConfluence,
+    space_info,
+    ctx: Sync2CfContext,
+):
+    """Upsert an empty root page named after the repo directory under the space homepage.
+
+    All integration pages are created as children of this page so that
+    deleting it (and its descendants) cleans up all integration artifacts.
+    """
+    root_page = Page(
+        space=ctx.space,
+        title=ctx.repo_path.name,
+        body="",
+        content_type="page",
+    )
+    root_page.parent_id = space_info.homepage.id
+
+    result = upsert_page(
+        confluence=confluence,
+        message=None,
+        page=root_page,
+        only_changed=True,
+        replace_all_labels=False,
+        minor_edit=True,
+    )
+    log.info(
+        "Integration root page '%s' (%s)",
+        root_page.title,
+        result.action.name,
+    )
+    return result.response
+
+
 def _preprocess_page(
     page: Page,
     ctx: Sync2CfContext,
     preface_markup: str,
     postface_markup: str,
     space_info,
+    integration_root=None,
 ) -> None:
     page.original_title = page.title
     page.space = ctx.space
@@ -156,9 +198,12 @@ def _preprocess_page(
     if page.parent_title is not None and ctx.prefix:
         page.parent_title = f"{ctx.prefix} - {page.parent_title}"
 
-    # Top-level pages → child of space homepage
-    if page.parent_title is None and page.parent_id is None and space_info is not None:
-        page.parent_id = space_info.homepage.id
+    # Top-level pages → child of integration root (int) or space homepage (prod)
+    if page.parent_title is None and page.parent_id is None:
+        if integration_root is not None:
+            page.parent_id = integration_root.id
+        elif space_info is not None:
+            page.parent_id = space_info.homepage.id
 
     # Apply prefix to page title
     if ctx.prefix:

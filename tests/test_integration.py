@@ -75,18 +75,18 @@ def synced_pages(  # pylint: disable=redefined-outer-name
 
     yield unique_prefix
 
-    # ── Cleanup: delete test pages (children first) ───────────────────
-    for title_suffix in ["Sub", "Root", "doc", "repo"]:
-        title = f"{unique_prefix} - {title_suffix}"
-        try:
-            page = atlassian_client.get_page_by_title(
-                space=confluence_space, title=title
-            )
-            if page:
-                atlassian_client.remove_page(page["id"], recursive=True)
-        except Exception:  # pylint: disable=broad-exception-caught
-            pass
-    # Also try prefixed versions of folder pages
+    # ── Cleanup: delete integration root page (recursively) ──────────
+    # The integration root page is named after the repo directory.
+    repo_name = test_repo.name
+    try:
+        root = atlassian_client.get_page_by_title(
+            space=confluence_space, title=repo_name
+        )
+        if root:
+            atlassian_client.remove_page(root["id"], recursive=True)
+    except Exception:  # pylint: disable=broad-exception-caught
+        pass
+    # Also clean up any orphaned prefixed pages
     for title in [
         f"{unique_prefix} - {unique_prefix} Root",
         f"{unique_prefix} - {unique_prefix} Sub",
@@ -138,22 +138,40 @@ class TestIntegrationSync:
         body = page["body"]["storage"]["value"]
         assert "Root page content" in body
 
-    def test_page_is_child_of_homepage(  # pylint: disable=redefined-outer-name
-        self, synced_pages, atlassian_client, confluence_space
-    ):
-        prefix = synced_pages
+    def test_integration_root_page_is_child_of_homepage(
+        self, synced_pages, atlassian_client, confluence_space, test_repo
+    ):  # pylint: disable=redefined-outer-name
+        repo_name = test_repo.name
         space_info = atlassian_client.get_space(confluence_space, expand="homepage")
         homepage_id = space_info["homepage"]["id"]
 
-        # Find our root-level page(s) — they should be children of homepage
+        # Integration root page (named after repo dir) should be child of homepage
         children = atlassian_client.get_page_child_by_type(
             homepage_id, type="page", limit=200
         )
         child_titles = [c["title"] for c in children]
-        # At least one of our test pages should be a direct child
+        assert repo_name in child_titles, (
+            f"Integration root page '{repo_name}' not found as child of homepage. "
+            f"Children: {child_titles[:10]}"
+        )
+
+    def test_pages_are_children_of_integration_root(
+        self, synced_pages, atlassian_client, confluence_space, test_repo
+    ):  # pylint: disable=redefined-outer-name
+        prefix = synced_pages
+        repo_name = test_repo.name
+        root = atlassian_client.get_page_by_title(
+            space=confluence_space, title=repo_name
+        )
+        assert root is not None, f"Integration root page '{repo_name}' not found"
+
+        children = atlassian_client.get_page_child_by_type(
+            root["id"], type="page", limit=200
+        )
+        child_titles = [c["title"] for c in children]
         found = any(prefix in t for t in child_titles)
         assert found, (
-            f"No test page with prefix '{prefix}' found as child of homepage. "
+            f"No test page with prefix '{prefix}' found as child of integration root. "
             f"Children: {child_titles[:10]}"
         )
 
