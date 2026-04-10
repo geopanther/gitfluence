@@ -4,16 +4,8 @@ name: Sync2Confluence
 on:
   push:
     branches: [main]
-    paths:
-      - 'README.md'
-      - 'doc/**'
-      - '.github/workflows/sync2cf.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'README.md'
-      - 'doc/**'
-      - '.github/workflows/sync2cf.yml'
   workflow_dispatch:
 
 permissions:
