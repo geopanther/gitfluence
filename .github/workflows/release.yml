@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: bmw-ubuntu-24.04-medium
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.9.26"
+          enable-cache: true
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid version format in pyproject.toml: $VERSION"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Detected version: $VERSION"
+
+      - name: Check tag does not exist
+        run: |
+          if git ls-remote --tags origin | grep -q "refs/tags/${{ steps.version.outputs.tag }}$"; then
+            echo "::error::Tag ${{ steps.version.outputs.tag }} already exists. Bump version in pyproject.toml first."
+            exit 1
+          fi
+
+      - name: Build package
+        run: |
+          rm -rf dist/
+          uv build
+
+      - name: Verify build artifacts
+        run: |
+          ls dist/*.whl dist/*.tar.gz
+          echo "Build artifacts:"
+          ls -la dist/
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "${{ steps.version.outputs.tag }}" \
+            --generate-notes \
+            dist/*
