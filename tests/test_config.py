@@ -18,8 +18,6 @@ class TestSync2CfSettings:
             "CONFLUENCE_PROD_TOKEN",
             "CONFLUENCE_INT_HOST",
             "CONFLUENCE_INT_TOKEN",
-            "CONFLUENCE_READONLY_HOST",
-            "CONFLUENCE_READONLY_TOKEN",
             "CONFLUENCE_SPACE",
         ]:
             monkeypatch.delenv(name, raising=False)
@@ -32,8 +30,6 @@ class TestSync2CfSettings:
             s.confluence_int_host == "https://atc-int.bmwgroup.net/confluence/rest/api"
         )
         assert s.confluence_int_token is None
-        assert s.confluence_readonly_host is None
-        assert s.confluence_readonly_token is None
         assert s.confluence_space is None
 
     def test_defaults_from_env(self, monkeypatch):
@@ -59,8 +55,6 @@ class TestSync2CfContext:
             "confluence_prod_token": SecretStr("tok-prod"),
             "confluence_int_host": None,
             "confluence_int_token": None,
-            "confluence_readonly_host": None,
-            "confluence_readonly_token": None,
             "confluence_space": "SP",
         }
         defaults.update(overrides)
@@ -101,35 +95,6 @@ class TestSync2CfContext:
         assert ctx.write_token.get_secret_value() == "tok-int"
         assert ctx.prefix == "dev"
 
-    def test_readonly_routing(self):
-        s = self._make_settings(
-            confluence_readonly_host="https://ro.example.com/api",
-            confluence_readonly_token=SecretStr("tok-ro"),
-        )
-        ctx = Sync2CfContext(
-            s, repo_path=Path("/tmp"), use_prod=True, branch_name="main"
-        )
-        assert ctx.read_host == "https://ro.example.com/api"
-        assert ctx.read_token.get_secret_value() == "tok-ro"
-
-    def test_no_readonly(self):
-        s = self._make_settings(confluence_readonly_host=None)
-        ctx = Sync2CfContext(
-            s, repo_path=Path("/tmp"), use_prod=True, branch_name="main"
-        )
-        assert ctx.read_host is None
-        assert ctx.read_token is None
-
-    def test_readonly_token_falls_back_to_prod(self):
-        s = self._make_settings(
-            confluence_readonly_host="https://ro.example.com/api",
-            confluence_readonly_token=None,
-        )
-        ctx = Sync2CfContext(
-            s, repo_path=Path("/tmp"), use_prod=True, branch_name="main"
-        )
-        assert ctx.read_token.get_secret_value() == "tok-prod"
-
     def test_missing_token_non_interactive(self, monkeypatch):
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: False})())
         s = self._make_settings(confluence_prod_token=None)
@@ -140,7 +105,6 @@ class TestSync2CfContext:
         s = self._make_settings(
             confluence_prod_token=None,
             confluence_int_token=None,
-            confluence_readonly_token=None,
         )
         ctx = Sync2CfContext(
             s,
@@ -150,7 +114,6 @@ class TestSync2CfContext:
             dry_run=True,
         )
         assert ctx.write_token.get_secret_value() == "dummy"
-        assert ctx.read_token is None
 
     def test_prompt_prod_token_exports(self, monkeypatch):
         prompts = []
@@ -161,9 +124,7 @@ class TestSync2CfContext:
             lambda prompt: prompts.append(prompt) or "tok-prompt",
         )
         monkeypatch.delenv("CONFLUENCE_PROD_TOKEN", raising=False)
-        s = self._make_settings(
-            confluence_prod_token=None, confluence_readonly_token=None
-        )
+        s = self._make_settings(confluence_prod_token=None)
         ctx = Sync2CfContext(
             s,
             repo_path=Path("/tmp"),
@@ -172,7 +133,6 @@ class TestSync2CfContext:
             dry_run=False,
         )
         assert ctx.write_token.get_secret_value() == "tok-prompt"
-        assert ctx.read_token is None
         assert os.environ["CONFLUENCE_PROD_TOKEN"] == "tok-prompt"
         assert prompts == ["CONFLUENCE_PROD_TOKEN (or set before run): "]
 

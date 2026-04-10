@@ -36,9 +36,6 @@ class Sync2CfSettings(BaseSettings):
     )
     confluence_int_token: Optional[SecretStr] = None
 
-    confluence_readonly_host: Optional[str] = None
-    confluence_readonly_token: Optional[SecretStr] = None
-
     confluence_space: Optional[str] = None
 
 
@@ -82,23 +79,6 @@ class Sync2CfContext:
                 dry_run=dry_run,
             )
             self.prefix = branch_name
-
-        # ── Effective read target (optional) ───────────────────────────
-        if settings.confluence_readonly_host:
-            prod_token = prod_token or self._require_token(
-                settings.confluence_prod_token,
-                "CONFLUENCE_PROD_TOKEN",
-                dry_run=dry_run,
-            )
-            self.read_host: Optional[str] = settings.confluence_readonly_host
-            self.read_token: Optional[SecretStr] = self._require_token(
-                settings.confluence_readonly_token or prod_token,
-                "CONFLUENCE_READONLY_TOKEN (falling back to CONFLUENCE_PROD_TOKEN)",
-                dry_run=dry_run,
-            )
-        else:
-            self.read_host = None
-            self.read_token = None
 
         self.space = self._require_space(settings.confluence_space, dry_run=dry_run)
 

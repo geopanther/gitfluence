@@ -23,8 +23,6 @@ python -m sync2cf --prefix "DEV" .       # override auto-prefix
 | `CONFLUENCE_PROD_TOKEN` | `dummy` on `--dry-run`, otherwise prompt if interactive | PAT for production writes |
 | `CONFLUENCE_INT_HOST` | `https://atc-int.bmwgroup.net/confluence/rest/api` | Integration Confluence REST API base URL |
 | `CONFLUENCE_INT_TOKEN` | `dummy` on `--dry-run`, otherwise prompt if interactive | PAT for integration writes |
-| `CONFLUENCE_READONLY_HOST` | — | Read-only Confluence host (all GET requests routed here) |
-| `CONFLUENCE_READONLY_TOKEN` | Falls back to `CONFLUENCE_PROD_TOKEN` | PAT for read-only host |
 | `CONFLUENCE_SPACE` | `DRY_RUN` on `--dry-run`, otherwise prompt if interactive | Confluence space key |
 
 `sync2cf` reads environment variables only. No `.env` file support.
@@ -36,8 +34,6 @@ Token behavior:
 - interactive non-dry-run: missing required token or space prompts on tty
 - non-interactive non-dry-run: missing required token fails fast
 
-Read-only routing is disabled unless `CONFLUENCE_READONLY_HOST` is explicitly set.
-
 Prompted tokens are exported into current `sync2cf` process environment only. Shell parent environment cannot be mutated by a child process.
 
 ## Prod vs Integration Logic
@@ -47,15 +43,11 @@ Prompted tokens are exported into current `sync2cf` process environment only. Sh
 | On default branch, clean, up-to-date with remote | **Prod** (`CONFLUENCE_PROD_HOST`) | *(none)* |
 | Feature branch / dirty tree / behind remote | **Integration** (`CONFLUENCE_INT_HOST`, falls back to Prod) | Branch name |
 
-`CONFLUENCE_INT_HOST` falls back to `CONFLUENCE_PROD_HOST` when not set. `CONFLUENCE_INT_TOKEN` does not fall back to prod on real runs because prod and int credentials may differ. `CONFLUENCE_READONLY_TOKEN` still falls back to `CONFLUENCE_PROD_TOKEN`.
+`CONFLUENCE_INT_HOST` falls back to `CONFLUENCE_PROD_HOST` when not set. `CONFLUENCE_INT_TOKEN` does not fall back to prod on real runs because prod and int credentials may differ.
 
 ## Page Hierarchy
 
 All root-level pages from the repo are created as **children of the Confluence space's home page**. Subdirectories become nested child pages, preserving the repo's folder structure. The space home page itself is never modified.
-
-## Read-Only Routing
-
-When `CONFLUENCE_READONLY_HOST` and `CONFLUENCE_READONLY_TOKEN` are set, all Confluence **read** operations (page lookups, space info, attachment checks) are routed to the read-only instance. Writes always go to the effective write host.
 
 ## Using sync2cf in Your Repo
 

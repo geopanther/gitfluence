@@ -34,8 +34,6 @@ def _make_ctx(
     ctx.dry_run = dry_run
     ctx.write_host = write_host
     ctx.write_token = SecretStr(write_token)
-    ctx.read_host = None
-    ctx.read_token = None
     ctx.repo_path = Path("/tmp")
     return ctx
 

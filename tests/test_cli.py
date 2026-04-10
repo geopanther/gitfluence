@@ -23,7 +23,6 @@ class TestCLI:
     def test_dry_run_no_api_calls(self, tmp_repo, monkeypatch):
         monkeypatch.delenv("CONFLUENCE_PROD_TOKEN", raising=False)
         monkeypatch.delenv("CONFLUENCE_INT_TOKEN", raising=False)
-        monkeypatch.delenv("CONFLUENCE_READONLY_TOKEN", raising=False)
         monkeypatch.delenv("CONFLUENCE_INT_HOST", raising=False)
         with patch("sync2cf.__main__.run_sync") as mock_sync:
             main(["--dry-run", str(tmp_repo)])
