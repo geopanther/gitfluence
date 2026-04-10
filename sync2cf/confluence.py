@@ -6,8 +6,8 @@ import logging
 from pathlib import Path
 
 import md2cf.document
-from md2cf.api import MinimalConfluence
 from md2cf.anchor import rewrite_page_anchors
+from md2cf.api import MinimalConfluence
 from md2cf.document import Page
 from md2cf.upsert import upsert_attachment, upsert_page
 
@@ -62,8 +62,6 @@ class ReadWriteConfluence(MinimalConfluence):
 def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> None:
     """Run the full sync: collect pages, preprocess, upsert, resolve links."""
 
-    confluence = ReadWriteConfluence(ctx)
-
     # ── 1. Collect pages from directory ────────────────────────────────
     pages = _collect_pages(ctx.repo_path)
     if not pages:
@@ -77,16 +75,20 @@ def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> 
     _validate_relative_links(pages, path_to_page)
 
     # ── 3. Fetch space info for --top-level ───────────────────────────
+    if ctx.dry_run:
+        # In dry-run mode we skip Confluence API calls entirely
+        for page in pages:
+            _preprocess_page(page, ctx, preface_markup, postface_markup, None)
+            log.info("[dry-run] Would upsert: %s", page.title)
+        return
+
+    confluence = ReadWriteConfluence(ctx)
     space_info = confluence.get_space(ctx.space, additional_expansions=["homepage"])
 
     # ── 4. Pre-process & upsert each page ─────────────────────────────
     something_went_wrong = False
     for page in pages:
         _preprocess_page(page, ctx, preface_markup, postface_markup, space_info)
-
-        if ctx.dry_run:
-            log.info("[dry-run] Would upsert: %s", page.title)
-            continue
 
         try:
             result = upsert_page(
@@ -116,7 +118,7 @@ def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> 
             if page.file_path is not None:
                 path_to_page[page.file_path.resolve()] = final_page
 
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             log.exception("Failed to upsert page '%s'", page.title)
             something_went_wrong = True
             break
@@ -134,7 +136,7 @@ def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> 
 
 def _collect_pages(repo_path: Path) -> list[Page]:
     return list(
-        md2cf.document.get_pages_from_directory(
+        md2cf.document.get_pages_from_directory(  # pylint: disable=no-member
             repo_path,
             collapse_single_pages=True,
             skip_empty=True,
@@ -192,7 +194,7 @@ def _preprocess_page(
         page.parent_title = f"{ctx.prefix} - {page.parent_title}"
 
     # Top-level pages → child of space homepage
-    if page.parent_title is None and page.parent_id is None:
+    if page.parent_title is None and page.parent_id is None and space_info is not None:
         page.parent_id = space_info.homepage.id
 
     # Apply prefix to page title
@@ -213,7 +215,7 @@ def _resolve_relative_links(
     confluence: MinimalConfluence,
     pages: list[Page],
     path_to_page: dict[Path, Page | None],
-    ctx: Sync2CfContext,
+    ctx: Sync2CfContext,  # pylint: disable=unused-argument
 ) -> None:
     for page in pages:
         if page.file_path is None:
@@ -249,7 +251,5 @@ def _resolve_relative_links(
                     replace_all_labels=False,
                     minor_edit=True,
                 )
-            except Exception:
-                log.exception(
-                    "Failed to update relative links for '%s'", page.title
-                )
+            except Exception:  # pylint: disable=broad-exception-caught
+                log.exception("Failed to update relative links for '%s'", page.title)

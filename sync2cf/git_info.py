@@ -76,7 +76,9 @@ def _detect_default_branch(repo: git.Repo) -> str:
     return "main"
 
 
-def _check_up_to_date(repo: git.Repo, branch_name: str) -> bool:
+def _check_up_to_date(  # pylint: disable=unused-argument
+    repo: git.Repo, branch_name: str
+) -> bool:
     """Return True if the local branch HEAD matches its remote tracking branch."""
     try:
         tracking = repo.active_branch.tracking_branch()

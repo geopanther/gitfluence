@@ -4,20 +4,18 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from pydantic import SecretStr
 
-from sync2cf.config import Sync2CfContext, Sync2CfSettings
+from sync2cf.config import Sync2CfContext
 from sync2cf.confluence import (
-    ReadWriteConfluence,
     _build_path_map,
     _collect_pages,
     _preprocess_page,
     _validate_relative_links,
 )
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -147,4 +145,4 @@ class TestCollectPages:
 
     def test_collect_empty_dir(self, tmp_path):
         pages = _collect_pages(tmp_path)
-        assert pages == []
+        assert not pages

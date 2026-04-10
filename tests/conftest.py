@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from pydantic import SecretStr
 
-from sync2cf.config import Sync2CfContext, Sync2CfSettings
+from sync2cf.config import Sync2CfSettings
 
 
 def _require_env(name: str) -> str:
@@ -34,7 +34,9 @@ def confluence_space() -> str:
 
 
 @pytest.fixture(scope="session")
-def settings(int_host, int_token, confluence_space) -> Sync2CfSettings:
+def settings(  # pylint: disable=redefined-outer-name
+    int_host, int_token, confluence_space
+) -> Sync2CfSettings:
     return Sync2CfSettings(
         confluence_prod_host=int_host,
         confluence_prod_token=SecretStr(int_token),
@@ -47,7 +49,7 @@ def settings(int_host, int_token, confluence_space) -> Sync2CfSettings:
 @pytest.fixture()
 def tmp_repo(tmp_path: Path) -> Path:
     """Create a minimal git repo with one markdown file and a dummy origin."""
-    import git as gitmodule
+    import git as gitmodule  # pylint: disable=import-outside-toplevel
 
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()

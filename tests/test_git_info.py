@@ -1,5 +1,7 @@
 """Unit tests for sync2cf.git_info."""
 
+# pylint: disable=duplicate-code
+
 from __future__ import annotations
 
 from pathlib import Path

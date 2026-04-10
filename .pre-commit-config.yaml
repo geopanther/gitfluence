@@ -2,28 +2,22 @@ default_stages: [pre-push]
 
 repos:
   - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+    rev: 8.0.1
     hooks:
       - id: isort
-        stages: [pre-push]
 
   - repo: https://github.com/psf/black
     rev: 24.10.0
     hooks:
       - id: black
-        stages: [pre-push]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
-        stages: [pre-push]
       - id: end-of-file-fixer
-        stages: [pre-push]
       - id: check-yaml
-        stages: [pre-push]
       - id: check-added-large-files
-        stages: [pre-push]
 
   - repo: local
     hooks:
@@ -32,7 +26,6 @@ repos:
         entry: uv run pylint
         language: system
         types: [python]
-        stages: [pre-push]
         args: [--rcfile=.pylintrc]
       - id: pytest
         name: pytest (unit tests)
@@ -40,4 +33,3 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-        stages: [pre-push]
