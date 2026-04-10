@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: bmw-ubuntu-24.04-medium
     timeout-minutes: 10
 
     steps:
