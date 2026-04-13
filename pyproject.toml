@@ -7,7 +7,7 @@ allow-direct-references = true
 
 [project]
 name = "sync2cf"
-version = "0.1.0"
+version = "0.1.1"
 description = "Sync markdown files from a git repo to Confluence as a page hierarchy"
 requires-python = ">=3.12"
 dependencies = [
