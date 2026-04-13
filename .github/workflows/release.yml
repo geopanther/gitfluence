@@ -51,6 +51,9 @@ jobs:
           echo "Build artifacts:"
           ls -la dist/
 
+      - name: Publish to PyPI (Nexus)
+        run: uv publish --publish-url https://nexus.bmwgroup.net/repository/bmw_pypi_repositories/
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
