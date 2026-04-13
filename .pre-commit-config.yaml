@@ -1,4 +1,5 @@
 default_stages: [pre-push]
+default_install_hook_types: [pre-commit, pre-push]
 
 repos:
   - repo: https://github.com/pycqa/isort
@@ -21,6 +22,13 @@ repos:
 
   - repo: local
     hooks:
+      - id: uv-lock-check
+        name: uv.lock up-to-date
+        entry: uv lock --check
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
       - id: pylint
         name: pylint
         entry: uv run pylint
@@ -40,3 +48,4 @@ repos:
         pass_filenames: false
         args: ["--dry-run", "."]
         always_run: true
+        stages: [pre-push]
