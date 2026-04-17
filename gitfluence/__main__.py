@@ -21,7 +21,7 @@ log = logging.getLogger("gitfluence")
 _PACKAGE_FILES = resources.files("gitfluence")
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv: list[str] | None = None) -> None:  # pylint: disable=too-many-locals,too-many-statements
     parser = argparse.ArgumentParser(
         prog="gitfluence",
         description="Sync markdown files from a git repo to Confluence.",
@@ -67,12 +67,6 @@ def main(argv: list[str] | None = None) -> None:
         default=3,
         help="Maximum number of retries for Confluence API calls (default: 3).",
     )
-    parser.add_argument(
-        "--insecure",
-        action="store_true",
-        help="Disable SSL certificate verification.",
-    )
-
     # ── Page information arguments ────────────────────────────────────
     page_group = parser.add_argument_group("page information arguments")
     page_group.add_argument(

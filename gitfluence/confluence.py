@@ -51,9 +51,9 @@ def run_sync(
     confluence = MinimalConfluence(
         host=ctx.write_host,
         token=ctx.write_token.get_secret_value(),
-        insecure=getattr(args, "insecure", False) if args else False,
         max_retries=getattr(args, "max_retries", 3) if args else 3,
     )
+    log.info("Connecting to Confluence at %s (space: %s)", ctx.write_host, ctx.space)
     space_info = confluence.get_space(ctx.space, additional_expansions=["homepage"])
 
     # ── 3b. Integration root page ─────────────────────────────────────
