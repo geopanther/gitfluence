@@ -28,23 +28,9 @@ repos:
         language: system
         files: CHANGELOG.md
         stages: [pre-commit]
-      - id: pylint
-        name: pylint
-        entry: pylint
+      - id: tox
+        name: tox
+        entry: tox -e py312
         language: system
-        types: [python]
-        args: [--rcfile=.pylintrc]
-      - id: pytest
-        name: pytest (unit tests)
-        entry: pytest
-        language: system
-        pass_filenames: false
         always_run: true
-      - id: gitfluence
-        name: gitfluence
-        entry: gitfluence
-        language: system
         pass_filenames: false
-        args: ["--dry-run", "."]
-        always_run: true
-        stages: [pre-push]

@@ -60,8 +60,13 @@ deps = [
     "pytest-mock",
     "pyfakefs",
     "requests-mock",
+    "pylint",
 ]
-commands = [["pytest"]]
+commands = [
+    ["pylint", "--rcfile=.pylintrc", "gitfluence"],
+    ["pytest"],
+    ["gitfluence", "--dry-run", "."],
+]
 
 [tool.isort]
 profile = "black"
