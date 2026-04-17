@@ -21,9 +21,9 @@ log = logging.getLogger("gitfluence")
 _PACKAGE_FILES = resources.files("gitfluence")
 
 
-def main(
+def main(  # pylint: disable=too-many-locals,too-many-statements
     argv: list[str] | None = None,
-) -> None:  # pylint: disable=too-many-locals,too-many-statements
+) -> None:
     parser = argparse.ArgumentParser(
         prog="gitfluence",
         description="Sync markdown files from a git repo to Confluence.",
