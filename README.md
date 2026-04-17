@@ -111,14 +111,11 @@ gitfluence supports all mdfluence options. Key groups:
 
 **Anchors:** `--convert-anchors` / `--no-convert-anchors`
 
-**General:** `--only-changed`, `--max-retries`, `--insecure`
+**General:** `--only-changed`, `--max-retries`
 
 ## Development
 
-```bash
-pip install -e ".[dev,test]"
-pytest
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
 ## License
 
