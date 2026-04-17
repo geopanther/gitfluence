@@ -1,4 +1,4 @@
-"""Configuration for sync2cf using pydantic-settings.
+"""Configuration for gitfluence using pydantic-settings.
 
 All values read from environment variables.
 """
@@ -22,24 +22,22 @@ def _prompt_text(env_name: str) -> str:
     return f"{env_name} (or set before run): "
 
 
-class Sync2CfSettings(BaseSettings):
+class GitfluenceSettings(BaseSettings):
     """Environment-driven configuration for Confluence sync."""
 
     model_config = SettingsConfigDict()
 
     # ── Confluence hosts & tokens ──────────────────────────────────────
-    confluence_prod_host: str = "https://atc.bmwgroup.net/confluence/rest/api"
+    confluence_prod_host: str
     confluence_prod_token: Optional[SecretStr] = None
 
-    confluence_int_host: Optional[str] = (
-        "https://atc-int.bmwgroup.net/confluence/rest/api"
-    )
+    confluence_int_host: Optional[str] = None
     confluence_int_token: Optional[SecretStr] = None
 
     confluence_space: Optional[str] = None
 
 
-class Sync2CfContext:
+class GitfluenceContext:
     """Runtime context assembled from settings + git state + CLI args.
 
     Passed as single parameter to every function that needs configuration.
@@ -47,7 +45,7 @@ class Sync2CfContext:
 
     def __init__(
         self,
-        settings: Sync2CfSettings,
+        settings: GitfluenceSettings,
         *,
         repo_path: Path,
         use_prod: bool,

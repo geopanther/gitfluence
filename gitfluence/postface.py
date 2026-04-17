@@ -6,7 +6,7 @@ import getpass
 import socket
 from datetime import datetime, timezone
 
-from sync2cf.git_info import GitInfo
+from gitfluence.git_info import GitInfo
 
 
 def render_postface(template: str, git_info: GitInfo) -> str:

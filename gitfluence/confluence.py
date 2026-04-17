@@ -1,17 +1,17 @@
-"""Confluence sync orchestration using md2cf library API."""
+"""Confluence sync orchestration using mdfluence library API."""
 
 from __future__ import annotations
 
 import logging
 from pathlib import Path
 
-import md2cf.document
-from md2cf.anchor import rewrite_page_anchors
-from md2cf.api import MinimalConfluence
-from md2cf.document import Page
-from md2cf.upsert import upsert_attachment, upsert_page
+import mdfluence.document
+from mdfluence.anchor import rewrite_page_anchors
+from mdfluence.api import MinimalConfluence
+from mdfluence.document import Page
+from mdfluence.upsert import upsert_attachment, upsert_page
 
-from sync2cf.config import Sync2CfContext
+from gitfluence.config import GitfluenceContext
 
 log = logging.getLogger(__name__)
 
@@ -19,11 +19,17 @@ log = logging.getLogger(__name__)
 # ── Main orchestration ────────────────────────────────────────────────────
 
 
-def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> None:
+def run_sync(
+    ctx: GitfluenceContext,
+    preface_markup: str,
+    postface_markup: str,
+    *,
+    args=None,
+) -> None:
     """Run the full sync: collect pages, preprocess, upsert, resolve links."""
 
     # ── 1. Collect pages from directory ────────────────────────────────
-    pages = _collect_pages(ctx.repo_path)
+    pages = _collect_pages(ctx.repo_path, args=args)
     if not pages:
         log.warning("No markdown pages found in %s", ctx.repo_path)
         return
@@ -45,6 +51,8 @@ def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> 
     confluence = MinimalConfluence(
         host=ctx.write_host,
         token=ctx.write_token.get_secret_value(),
+        insecure=getattr(args, "insecure", False) if args else False,
+        max_retries=getattr(args, "max_retries", 3) if args else 3,
     )
     space_info = confluence.get_space(ctx.space, additional_expansions=["homepage"])
 
@@ -72,11 +80,13 @@ def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> 
         try:
             result = upsert_page(
                 confluence=confluence,
-                message=None,
+                message=getattr(args, "message", None) if args else None,
                 page=page,
-                only_changed=True,
-                replace_all_labels=False,
-                minor_edit=False,
+                only_changed=getattr(args, "only_changed", True) if args else True,
+                replace_all_labels=(
+                    getattr(args, "replace_all_labels", False) if args else False
+                ),
+                minor_edit=getattr(args, "minor_edit", False) if args else False,
             )
             log.info("Upserted page '%s' (%s)", page.title, result.action.name)
 
@@ -113,20 +123,36 @@ def run_sync(ctx: Sync2CfContext, preface_markup: str, postface_markup: str) -> 
 # ── Internal helpers ──────────────────────────────────────────────────────
 
 
-def _collect_pages(repo_path: Path) -> list[Page]:
+def _collect_pages(repo_path: Path, *, args=None) -> list[Page]:
     return list(
-        md2cf.document.get_pages_from_directory(  # pylint: disable=no-member
+        mdfluence.document.get_pages_from_directory(  # pylint: disable=no-member
             repo_path,
-            collapse_single_pages=True,
-            skip_empty=True,
-            collapse_empty=False,
-            beautify_folders=False,
-            remove_text_newlines=False,
-            strip_header=True,
-            use_pages_file=False,
-            use_gitignore=True,
-            enable_relative_links=True,
-            skip_subtrees_wo_markdown=True,
+            collapse_single_pages=(
+                getattr(args, "collapse_single_pages", True) if args else True
+            ),
+            skip_empty=getattr(args, "skip_empty", True) if args else True,
+            collapse_empty=getattr(args, "collapse_empty", False) if args else False,
+            beautify_folders=(
+                getattr(args, "beautify_folders", False) if args else False
+            ),
+            remove_text_newlines=(
+                getattr(args, "remove_text_newlines", False) if args else False
+            ),
+            strip_header=(
+                getattr(args, "strip_top_header", True) if args else True
+            ),
+            use_pages_file=(
+                getattr(args, "use_pages_file", False) if args else False
+            ),
+            use_gitignore=(
+                not getattr(args, "no_gitignore", False) if args else True
+            ),
+            enable_relative_links=(
+                getattr(args, "enable_relative_links", True) if args else True
+            ),
+            skip_subtrees_wo_markdown=(
+                getattr(args, "skip_subtrees_wo_markdown", True) if args else True
+            ),
         )
     )
 
@@ -160,7 +186,7 @@ def _validate_relative_links(
 def _ensure_integration_root(
     confluence: MinimalConfluence,
     space_info,
-    ctx: Sync2CfContext,
+    ctx: GitfluenceContext,
 ):
     """Upsert an empty root page named after the repo directory under the space homepage.
 
@@ -193,7 +219,7 @@ def _ensure_integration_root(
 
 def _preprocess_page(
     page: Page,
-    ctx: Sync2CfContext,
+    ctx: GitfluenceContext,
     preface_markup: str,
     postface_markup: str,
     space_info,
@@ -233,7 +259,7 @@ def _resolve_relative_links(
     confluence: MinimalConfluence,
     pages: list[Page],
     path_to_page: dict[Path, Page | None],
-    ctx: Sync2CfContext,  # pylint: disable=unused-argument
+    ctx: GitfluenceContext,  # pylint: disable=unused-argument
 ) -> None:
     for page in pages:
         if page.file_path is None:
