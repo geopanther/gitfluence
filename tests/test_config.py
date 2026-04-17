@@ -111,7 +111,9 @@ class TestGitfluenceContext:
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: False})())
         s = self._make_settings(confluence_prod_token=None)
         with pytest.raises(SystemExit, match="CONFLUENCE_PROD_TOKEN"):
-            GitfluenceContext(s, repo_path=Path("/tmp"), use_prod=True, branch_name="main")
+            GitfluenceContext(
+                s, repo_path=Path("/tmp"), use_prod=True, branch_name="main"
+            )
 
     def test_missing_token_dry_run_uses_dummy(self):
         s = self._make_settings(
@@ -183,7 +185,9 @@ class TestGitfluenceContext:
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: False})())
         s = self._make_settings(confluence_space=None)
         with pytest.raises(SystemExit, match="CONFLUENCE_SPACE"):
-            GitfluenceContext(s, repo_path=Path("/tmp"), use_prod=True, branch_name="main")
+            GitfluenceContext(
+                s, repo_path=Path("/tmp"), use_prod=True, branch_name="main"
+            )
 
     def test_missing_space_dry_run_uses_default(self):
         s = self._make_settings(confluence_space=None)

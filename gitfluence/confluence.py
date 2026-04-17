@@ -138,15 +138,9 @@ def _collect_pages(repo_path: Path, *, args=None) -> list[Page]:
             remove_text_newlines=(
                 getattr(args, "remove_text_newlines", False) if args else False
             ),
-            strip_header=(
-                getattr(args, "strip_top_header", True) if args else True
-            ),
-            use_pages_file=(
-                getattr(args, "use_pages_file", False) if args else False
-            ),
-            use_gitignore=(
-                not getattr(args, "no_gitignore", False) if args else True
-            ),
+            strip_header=(getattr(args, "strip_top_header", True) if args else True),
+            use_pages_file=(getattr(args, "use_pages_file", False) if args else False),
+            use_gitignore=(not getattr(args, "no_gitignore", False) if args else True),
             enable_relative_links=(
                 getattr(args, "enable_relative_links", True) if args else True
             ),

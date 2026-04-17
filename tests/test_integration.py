@@ -20,7 +20,6 @@ from gitfluence.confluence import run_sync
 
 from .mock_confluence import MockConfluence
 
-
 # ── Fixtures ──────────────────────────────────────────────────────────────
 
 
@@ -79,9 +78,7 @@ def _run_sync_with_mock(
         dry_run=dry_run,
     )
 
-    with patch(
-        "gitfluence.confluence.MinimalConfluence", return_value=mock_confluence
-    ):
+    with patch("gitfluence.confluence.MinimalConfluence", return_value=mock_confluence):
         run_sync(ctx, preface_markup="", postface_markup="")
 
     return ctx
@@ -122,9 +119,9 @@ class TestFullSync:
 
         children = mock_confluence.get_children(parent_id=1)
         titles = [c.title for c in children]
-        assert any(unique_prefix in t for t in titles), (
-            f"No page with prefix '{unique_prefix}' under homepage. Children: {titles}"
-        )
+        assert any(
+            unique_prefix in t for t in titles
+        ), f"No page with prefix '{unique_prefix}' under homepage. Children: {titles}"
 
     def test_relative_links_resolved(self, mock_confluence, test_repo, unique_prefix):
         _run_sync_with_mock(mock_confluence, test_repo)
@@ -137,20 +134,14 @@ class TestFullSync:
 
 
 class TestIntegrationPrefix:
-    def test_prefix_applied_to_titles(
-        self, mock_confluence, test_repo, unique_prefix
-    ):
+    def test_prefix_applied_to_titles(self, mock_confluence, test_repo, unique_prefix):
         prefix = "feat/my-branch"
         _run_sync_with_mock(mock_confluence, test_repo, prefix=prefix)
 
-        page = mock_confluence.get_page_by_title(
-            f"{prefix} - {unique_prefix} Root"
-        )
+        page = mock_confluence.get_page_by_title(f"{prefix} - {unique_prefix} Root")
         assert page is not None, "Prefixed root page not found"
 
-    def test_integration_root_created(
-        self, mock_confluence, test_repo, unique_prefix
-    ):
+    def test_integration_root_created(self, mock_confluence, test_repo, unique_prefix):
         prefix = "feat/my-branch"
         _run_sync_with_mock(mock_confluence, test_repo, prefix=prefix)
 
@@ -171,9 +162,9 @@ class TestIntegrationPrefix:
 
         children = mock_confluence.get_children(root.id)
         titles = [c.title for c in children]
-        assert any(prefix in t for t in titles), (
-            f"No prefixed page under integration root. Children: {titles}"
-        )
+        assert any(
+            prefix in t for t in titles
+        ), f"No prefixed page under integration root. Children: {titles}"
 
 
 class TestPrefacePostface:

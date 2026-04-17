@@ -143,9 +143,7 @@ class MockConfluence:
         labels: list[str] | None = None,
         minor_edit: bool = False,
     ) -> Bunch:
-        page.body = Bunch(
-            {"storage": {"value": body, "representation": "storage"}}
-        )
+        page.body = Bunch({"storage": {"value": body, "representation": "storage"}})
         page.version = Bunch(
             {
                 "number": page.version.number + 1,

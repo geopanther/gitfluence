@@ -12,7 +12,6 @@ from pathlib import Path
 
 import pytest
 
-
 log = logging.getLogger(__name__)
 
 
