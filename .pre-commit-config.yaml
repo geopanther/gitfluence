@@ -30,19 +30,19 @@ repos:
         stages: [pre-commit]
       - id: pylint
         name: pylint
-        entry: uv run pylint
+        entry: pylint
         language: system
         types: [python]
         args: [--rcfile=.pylintrc]
       - id: pytest
         name: pytest (unit tests)
-        entry: uv run pytest
+        entry: pytest
         language: system
         pass_filenames: false
         always_run: true
       - id: gitfluence
         name: gitfluence
-        entry: uv run gitfluence
+        entry: gitfluence
         language: system
         pass_filenames: false
         args: ["--dry-run", "."]
