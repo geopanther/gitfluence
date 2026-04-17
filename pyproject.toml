@@ -62,6 +62,7 @@ deps = [
     "requests-mock",
     "pylint",
 ]
+set_env = {CONFLUENCE_PROD_HOST = "https://dummy.example.com/api"}
 commands = [
     ["pylint", "--rcfile=.pylintrc", "gitfluence"],
     ["pytest"],
