@@ -1,4 +1,4 @@
-"""Unit tests for sync2cf.config."""
+"""Unit tests for gitfluence.config."""
 
 from __future__ import annotations
 
@@ -8,11 +8,29 @@ from pathlib import Path
 import pytest
 from pydantic import SecretStr
 
-from sync2cf.config import Sync2CfContext, Sync2CfSettings
+from gitfluence.config import GitfluenceContext, GitfluenceSettings
 
 
-class TestSync2CfSettings:
-    def test_defaults_match_builtin_defaults(self, monkeypatch):
+class TestGitfluenceSettings:
+    def test_required_prod_host_from_env(self, monkeypatch):
+        monkeypatch.setenv("CONFLUENCE_PROD_HOST", "https://prod.example.com/api")
+        for name in [
+            "CONFLUENCE_PROD_TOKEN",
+            "CONFLUENCE_INT_HOST",
+            "CONFLUENCE_INT_TOKEN",
+            "CONFLUENCE_SPACE",
+        ]:
+            monkeypatch.delenv(name, raising=False)
+
+        s = GitfluenceSettings()
+
+        assert s.confluence_prod_host == "https://prod.example.com/api"
+        assert s.confluence_prod_token is None
+        assert s.confluence_int_host is None
+        assert s.confluence_int_token is None
+        assert s.confluence_space is None
+
+    def test_missing_prod_host_raises(self, monkeypatch):
         for name in [
             "CONFLUENCE_PROD_HOST",
             "CONFLUENCE_PROD_TOKEN",
@@ -22,32 +40,26 @@ class TestSync2CfSettings:
         ]:
             monkeypatch.delenv(name, raising=False)
 
-        s = Sync2CfSettings()
-
-        assert s.confluence_prod_host == "https://atc.bmwgroup.net/confluence/rest/api"
-        assert s.confluence_prod_token is None
-        assert (
-            s.confluence_int_host == "https://atc-int.bmwgroup.net/confluence/rest/api"
-        )
-        assert s.confluence_int_token is None
-        assert s.confluence_space is None
+        with pytest.raises(Exception):
+            GitfluenceSettings()
 
     def test_defaults_from_env(self, monkeypatch):
         monkeypatch.setenv("CONFLUENCE_PROD_HOST", "https://prod.example.com/api")
         monkeypatch.setenv("CONFLUENCE_PROD_TOKEN", "tok-prod")
         monkeypatch.setenv("CONFLUENCE_SPACE", "MYSPACE")
-        s = Sync2CfSettings()
+        s = GitfluenceSettings()
         assert s.confluence_prod_host == "https://prod.example.com/api"
         assert s.confluence_prod_token.get_secret_value() == "tok-prod"
         assert s.confluence_space == "MYSPACE"
 
     def test_int_token_defaults_to_none(self, monkeypatch):
+        monkeypatch.setenv("CONFLUENCE_PROD_HOST", "https://prod.example.com/api")
         monkeypatch.delenv("CONFLUENCE_INT_TOKEN", raising=False)
-        s = Sync2CfSettings()
+        s = GitfluenceSettings()
         assert s.confluence_int_token is None
 
 
-class TestSync2CfContext:
+class TestGitfluenceContext:
     @staticmethod
     def _make_settings(**overrides):
         defaults = {
@@ -58,11 +70,11 @@ class TestSync2CfContext:
             "confluence_space": "SP",
         }
         defaults.update(overrides)
-        return Sync2CfSettings(**defaults)
+        return GitfluenceSettings(**defaults)
 
     def test_prod_mode(self):
         s = self._make_settings()
-        ctx = Sync2CfContext(
+        ctx = GitfluenceContext(
             s, repo_path=Path("/tmp"), use_prod=True, branch_name="main"
         )
         assert ctx.write_host == "https://prod.example.com/api"
@@ -71,7 +83,7 @@ class TestSync2CfContext:
 
     def test_int_mode_falls_back_to_prod(self):
         s = self._make_settings()
-        ctx = Sync2CfContext(
+        ctx = GitfluenceContext(
             s,
             repo_path=Path("/tmp"),
             use_prod=False,
@@ -88,7 +100,7 @@ class TestSync2CfContext:
             confluence_int_host="https://int.example.com/api",
             confluence_int_token=SecretStr("tok-int"),
         )
-        ctx = Sync2CfContext(
+        ctx = GitfluenceContext(
             s, repo_path=Path("/tmp"), use_prod=False, branch_name="dev"
         )
         assert ctx.write_host == "https://int.example.com/api"
@@ -99,14 +111,14 @@ class TestSync2CfContext:
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: False})())
         s = self._make_settings(confluence_prod_token=None)
         with pytest.raises(SystemExit, match="CONFLUENCE_PROD_TOKEN"):
-            Sync2CfContext(s, repo_path=Path("/tmp"), use_prod=True, branch_name="main")
+            GitfluenceContext(s, repo_path=Path("/tmp"), use_prod=True, branch_name="main")
 
     def test_missing_token_dry_run_uses_dummy(self):
         s = self._make_settings(
             confluence_prod_token=None,
             confluence_int_token=None,
         )
-        ctx = Sync2CfContext(
+        ctx = GitfluenceContext(
             s,
             repo_path=Path("/tmp"),
             use_prod=True,
@@ -120,12 +132,12 @@ class TestSync2CfContext:
 
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: True})())
         monkeypatch.setattr(
-            "sync2cf.config.getpass.getpass",
+            "gitfluence.config.getpass.getpass",
             lambda prompt: prompts.append(prompt) or "tok-prompt",
         )
         monkeypatch.delenv("CONFLUENCE_PROD_TOKEN", raising=False)
         s = self._make_settings(confluence_prod_token=None)
-        ctx = Sync2CfContext(
+        ctx = GitfluenceContext(
             s,
             repo_path=Path("/tmp"),
             use_prod=True,
@@ -140,7 +152,7 @@ class TestSync2CfContext:
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: False})())
         s = self._make_settings(confluence_int_token=None)
         with pytest.raises(SystemExit, match="CONFLUENCE_INT_TOKEN"):
-            Sync2CfContext(
+            GitfluenceContext(
                 s,
                 repo_path=Path("/tmp"),
                 use_prod=False,
@@ -152,12 +164,12 @@ class TestSync2CfContext:
 
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: True})())
         monkeypatch.setattr(
-            "sync2cf.config.getpass.getpass",
+            "gitfluence.config.getpass.getpass",
             lambda prompt: prompts.append(prompt) or "tok-int",
         )
         monkeypatch.delenv("CONFLUENCE_INT_TOKEN", raising=False)
         s = self._make_settings(confluence_int_token=None)
-        ctx = Sync2CfContext(
+        ctx = GitfluenceContext(
             s,
             repo_path=Path("/tmp"),
             use_prod=False,
@@ -171,11 +183,11 @@ class TestSync2CfContext:
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: False})())
         s = self._make_settings(confluence_space=None)
         with pytest.raises(SystemExit, match="CONFLUENCE_SPACE"):
-            Sync2CfContext(s, repo_path=Path("/tmp"), use_prod=True, branch_name="main")
+            GitfluenceContext(s, repo_path=Path("/tmp"), use_prod=True, branch_name="main")
 
     def test_missing_space_dry_run_uses_default(self):
         s = self._make_settings(confluence_space=None)
-        ctx = Sync2CfContext(
+        ctx = GitfluenceContext(
             s,
             repo_path=Path("/tmp"),
             use_prod=True,
@@ -193,7 +205,7 @@ class TestSync2CfContext:
         )
         monkeypatch.delenv("CONFLUENCE_SPACE", raising=False)
         s = self._make_settings(confluence_space=None)
-        ctx = Sync2CfContext(
+        ctx = GitfluenceContext(
             s,
             repo_path=Path("/tmp"),
             use_prod=True,
@@ -205,7 +217,7 @@ class TestSync2CfContext:
 
     def test_dry_run_flag(self):
         s = self._make_settings()
-        ctx = Sync2CfContext(
+        ctx = GitfluenceContext(
             s,
             repo_path=Path("/tmp"),
             use_prod=True,

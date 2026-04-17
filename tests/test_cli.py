@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from sync2cf.__main__ import main
+from gitfluence.__main__ import main
 
 
 class TestCLI:
@@ -21,10 +21,11 @@ class TestCLI:
             main([str(bad)])
 
     def test_dry_run_no_api_calls(self, tmp_repo, monkeypatch):
+        monkeypatch.setenv("CONFLUENCE_PROD_HOST", "https://prod.example.com/api")
         monkeypatch.delenv("CONFLUENCE_PROD_TOKEN", raising=False)
         monkeypatch.delenv("CONFLUENCE_INT_TOKEN", raising=False)
         monkeypatch.delenv("CONFLUENCE_INT_HOST", raising=False)
-        with patch("sync2cf.__main__.run_sync") as mock_sync:
+        with patch("gitfluence.__main__.run_sync") as mock_sync:
             main(["--dry-run", str(tmp_repo)])
             mock_sync.assert_called_once()
             ctx = mock_sync.call_args[0][0]

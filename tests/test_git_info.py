@@ -1,4 +1,4 @@
-"""Unit tests for sync2cf.git_info."""
+"""Unit tests for gitfluence.git_info."""
 
 # pylint: disable=duplicate-code
 
@@ -8,7 +8,7 @@ from pathlib import Path
 
 import git as gitmodule
 
-from sync2cf.git_info import GitInfo, get_git_info
+from gitfluence.git_info import GitInfo, get_git_info
 
 
 class TestGitInfo:

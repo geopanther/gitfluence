@@ -1,4 +1,4 @@
-"""Unit tests for sync2cf.postface."""
+"""Unit tests for gitfluence.postface."""
 
 # pylint: disable=duplicate-code
 
@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import re
 
-from sync2cf.git_info import GitInfo
-from sync2cf.postface import render_postface
+from gitfluence.git_info import GitInfo
+from gitfluence.postface import render_postface
 
 
 class TestRenderPostface:

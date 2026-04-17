@@ -1,4 +1,4 @@
-"""Unit tests for sync2cf.confluence — preprocessing and orchestration."""
+"""Unit tests for gitfluence.confluence — preprocessing and orchestration."""
 
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pydantic import SecretStr
 
-from sync2cf.config import Sync2CfContext
-from sync2cf.confluence import (
+from gitfluence.config import GitfluenceContext
+from gitfluence.confluence import (
     _build_path_map,
     _collect_pages,
     _ensure_integration_root,
@@ -29,7 +29,7 @@ def _make_ctx(
     write_host="https://int.example.com/api",
     write_token="tok",
 ):
-    ctx = MagicMock(spec=Sync2CfContext)
+    ctx = MagicMock(spec=GitfluenceContext)
     ctx.prefix = prefix
     ctx.space = space
     ctx.dry_run = dry_run
@@ -172,7 +172,7 @@ class TestEnsureIntegrationRoot:
         result_mock.response.id = "42"
 
         with patch(
-            "sync2cf.confluence.upsert_page", return_value=result_mock
+            "gitfluence.confluence.upsert_page", return_value=result_mock
         ) as mock_upsert:
             ctx = _make_ctx(prefix="feat/x")
             ctx.repo_path = Path("/tmp/my-repo")
@@ -187,7 +187,7 @@ class TestEnsureIntegrationRoot:
         result_mock.action.name = "existed"
 
         with patch(
-            "sync2cf.confluence.upsert_page", return_value=result_mock
+            "gitfluence.confluence.upsert_page", return_value=result_mock
         ) as mock_upsert:
             ctx = _make_ctx(prefix="feat/x")
             ctx.repo_path = Path("/work/git/my-awesome-repo")
