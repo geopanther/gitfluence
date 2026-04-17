@@ -22,12 +22,11 @@ repos:
 
   - repo: local
     hooks:
-      - id: uv-lock-check
-        name: uv.lock up-to-date
-        entry: uv lock --check
+      - id: revert-changelog-rc
+        name: revert changelog rc headings
+        entry: python scripts/revert_changelog_rc.py
         language: system
-        pass_filenames: false
-        always_run: true
+        files: CHANGELOG.md
         stages: [pre-commit]
       - id: pylint
         name: pylint
@@ -41,9 +40,9 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-      - id: sync2cf
-        name: sync2cf
-        entry: uv run sync2cf
+      - id: gitfluence
+        name: gitfluence
+        entry: uv run gitfluence
         language: system
         pass_filenames: false
         args: ["--dry-run", "."]

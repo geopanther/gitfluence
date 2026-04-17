@@ -11,30 +11,37 @@ permissions:
 
 jobs:
   test:
-    runs-on: bmw-ubuntu-24.04-medium
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          version: "0.9.26"
-          enable-cache: true
+          python-version: "3.12"
 
       - name: Install dependencies
-        run: uv sync --frozen --extra dev
+        run: |
+          pip install -e ".[dev,test]"
+
+      - name: Install mdfluence (editable for test collection)
+        run: |
+          mdfluence_version=$(pip show mdfluence | awk '/^Version:/{print $2}')
+          git clone --branch "v${mdfluence_version}" --depth 1 \
+            https://github.com/geopanther/mdfluence.git /tmp/mdfluence
+          pip install -e /tmp/mdfluence
 
       - name: Lint (black)
-        run: uv run black --check .
+        run: black --check .
 
       - name: Lint (isort)
-        run: uv run isort --check .
+        run: isort --check .
 
       - name: Lint (pylint)
-        run: uv run pylint sync2cf
+        run: pylint gitfluence
 
       - name: Test
-        run: uv run pytest -m ''
+        run: pytest
