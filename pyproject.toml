@@ -1,34 +1,67 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.metadata]
-allow-direct-references = true
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
-name = "sync2cf"
-version = "0.1.1"
+name = "gitfluence"
+version = "0.1.0"
 description = "Sync markdown files from a git repo to Confluence as a page hierarchy"
+readme = "README.md"
+license = "MIT"
 requires-python = ">=3.12"
+authors = [
+    { name = "geopanther", email = "geopanther@mail.de" },
+]
+keywords = ["markdown", "confluence", "git", "sync"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+]
 dependencies = [
-    "md2cf @ git+https://github.com/geopanther/md2cf.git@pre-integration",
+    "mdfluence>=0.2.1",
     "gitpython>=3.1.46",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
-    "atlassian-python-api>=4.0",
-    "pre-commit>=4.0",
-    "black>=24.0",
-    "isort>=5.13",
-    "pylint>=3.3",
-]
+[project.urls]
+Homepage = "https://github.com/geopanther/gitfluence"
+Repository = "https://github.com/geopanther/gitfluence"
+Changelog = "https://github.com/geopanther/gitfluence/blob/main/CHANGELOG.md"
 
 [project.scripts]
-sync2cf = "sync2cf.__main__:main"
+gitfluence = "gitfluence.__main__:main"
+
+[tool.setuptools]
+packages = ["gitfluence"]
+
+[project.optional-dependencies]
+dev = [
+    "bump2version",
+    "build",
+    "pre-commit",
+    "tox",
+]
+test = [
+    "pytest>=8.0",
+    "pytest-mock",
+    "pyfakefs",
+    "requests-mock",
+]
+
+[tool.tox]
+envlist = ["py312", "py313"]
+
+[tool.tox.env_run_base]
+deps = [
+    "pytest",
+    "pytest-mock",
+    "pyfakefs",
+    "requests-mock",
+]
+commands = [["pytest"]]
 
 [tool.isort]
 profile = "black"
@@ -40,7 +73,4 @@ target-version = ["py312"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --tb=short -m 'not integration'"
-markers = [
-    "integration: tests that require a live Confluence instance (deselected by default)",
-]
+addopts = "-v --tb=short"
