@@ -1,47 +1,42 @@
-"""Integration tests that verify pages on Confluence INT via atlassian-python-api.
+"""Integration tests that verify the full sync pipeline using a mock Confluence.
 
-These tests require CONFLUENCE_INT_HOST, CONFLUENCE_INT_TOKEN, and
-CONFLUENCE_SPACE to be set.  They create test pages, verify them via the
-Atlassian REST client, and clean up afterwards.
+These tests exercise run_sync end-to-end — page collection, preprocessing,
+upsert, and relative-link resolution — without hitting any real Confluence
+instance.
 """
 
 from __future__ import annotations
 
 import uuid
 from pathlib import Path
+from unittest.mock import patch
 
 import git as gitmodule
 import pytest
-from atlassian import Confluence
+from pydantic import SecretStr
 
-pytestmark = pytest.mark.integration
+from gitfluence.config import GitfluenceContext, GitfluenceSettings
+from gitfluence.confluence import run_sync
 
-from sync2cf.config import (  # noqa: E402  # pylint: disable=wrong-import-position
-    Sync2CfContext,
-)
-from sync2cf.confluence import (  # noqa: E402  # pylint: disable=wrong-import-position
-    run_sync,
-)
+from .mock_confluence import MockConfluence
 
 
-@pytest.fixture(scope="session")
-def atlassian_client(int_host, int_token) -> Confluence:
-    """Atlassian Confluence client pointing at INT for verification."""
-    # atlassian-python-api expects the base URL without /rest/api
-    base_url = int_host.replace("/rest/api", "")
-    return Confluence(url=base_url, token=int_token)
+# ── Fixtures ──────────────────────────────────────────────────────────────
+
+
+@pytest.fixture()
+def mock_confluence():
+    """Fresh in-memory Confluence instance."""
+    return MockConfluence(space_key="TEST", homepage_id=1)
 
 
 @pytest.fixture()
 def unique_prefix() -> str:
-    """Short unique prefix to isolate test pages."""
     return f"test-{uuid.uuid4().hex[:8]}"
 
 
 @pytest.fixture()
-def test_repo(  # pylint: disable=redefined-outer-name
-    tmp_path: Path, unique_prefix: str
-) -> Path:
+def test_repo(tmp_path: Path, unique_prefix: str) -> Path:
     """Minimal git repo with two linked markdown files."""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
@@ -59,137 +54,171 @@ def test_repo(  # pylint: disable=redefined-outer-name
     return repo_dir
 
 
-@pytest.fixture()
-def synced_pages(  # pylint: disable=redefined-outer-name
-    test_repo, settings, unique_prefix, confluence_space, atlassian_client
-):
-    """Run sync and yield prefix; clean up pages afterwards."""
-    ctx = Sync2CfContext(
+def _make_settings() -> GitfluenceSettings:
+    return GitfluenceSettings(
+        confluence_prod_host="http://mock.example.com/api",
+        confluence_prod_token=SecretStr("mock-token"),
+        confluence_space="TEST",
+    )
+
+
+def _run_sync_with_mock(
+    mock_confluence: MockConfluence,
+    test_repo: Path,
+    *,
+    prefix: str | None = None,
+    dry_run: bool = False,
+) -> GitfluenceContext:
+    """Run sync against the mock, patching MinimalConfluence construction."""
+    settings = _make_settings()
+    ctx = GitfluenceContext(
         settings,
         repo_path=test_repo,
-        use_prod=False,
-        branch_name=unique_prefix,
-        dry_run=False,
+        use_prod=prefix is None,
+        branch_name=prefix or "main",
+        dry_run=dry_run,
     )
-    run_sync(ctx, preface_markup="", postface_markup="")
 
-    yield unique_prefix
-
-    # ── Cleanup: delete integration root page (recursively) ──────────
-    # The integration root page is named after the repo directory.
-    repo_name = test_repo.name
-    try:
-        root = atlassian_client.get_page_by_title(
-            space=confluence_space, title=repo_name
-        )
-        if root:
-            atlassian_client.remove_page(root["id"], recursive=True)
-    except Exception:  # pylint: disable=broad-exception-caught
-        pass
-    # Also clean up any orphaned prefixed pages
-    for title in [
-        f"{unique_prefix} - {unique_prefix} Root",
-        f"{unique_prefix} - {unique_prefix} Sub",
-    ]:
-        try:
-            page = atlassian_client.get_page_by_title(
-                space=confluence_space, title=title
-            )
-            if page:
-                atlassian_client.remove_page(page["id"], recursive=True)
-        except Exception:  # pylint: disable=broad-exception-caught
-            pass
-
-
-class TestIntegrationSync:
-    """Tests that run a real sync against Confluence INT and verify results."""
-
-    def test_root_page_created(
-        self, synced_pages, atlassian_client, confluence_space
-    ):  # pylint: disable=redefined-outer-name
-        prefix = synced_pages
-        page = atlassian_client.get_page_by_title(
-            space=confluence_space,
-            title=f"{prefix} - {prefix} Root",
-        )
-        assert page is not None, f"Root page '{prefix} - {prefix} Root' not found"
-        assert page["title"] == f"{prefix} - {prefix} Root"
-
-    def test_sub_page_created(
-        self, synced_pages, atlassian_client, confluence_space
-    ):  # pylint: disable=redefined-outer-name
-        prefix = synced_pages
-        page = atlassian_client.get_page_by_title(
-            space=confluence_space,
-            title=f"{prefix} - {prefix} Sub",
-        )
-        assert page is not None, f"Sub page '{prefix} - {prefix} Sub' not found"
-
-    def test_root_page_has_content(  # pylint: disable=redefined-outer-name
-        self, synced_pages, atlassian_client, confluence_space
+    with patch(
+        "gitfluence.confluence.MinimalConfluence", return_value=mock_confluence
     ):
-        prefix = synced_pages
-        page = atlassian_client.get_page_by_title(
-            space=confluence_space,
-            title=f"{prefix} - {prefix} Root",
-            expand="body.storage",
-        )
-        assert page is not None
-        body = page["body"]["storage"]["value"]
-        assert "Root page content" in body
-
-    def test_int_root_under_homepage(  # pylint: disable=unused-argument
-        self, synced_pages, atlassian_client, confluence_space, test_repo
-    ):  # pylint: disable=redefined-outer-name
-        repo_name = test_repo.name
-        space_info = atlassian_client.get_space(confluence_space, expand="homepage")
-        homepage_id = space_info["homepage"]["id"]
-
-        # Integration root page (named after repo dir) should be child of homepage
-        children = atlassian_client.get_page_child_by_type(
-            homepage_id, type="page", limit=200
-        )
-        child_titles = [c["title"] for c in children]
-        assert repo_name in child_titles, (
-            f"Integration root page '{repo_name}' not found as child of homepage. "
-            f"Children: {child_titles[:10]}"
-        )
-
-    def test_pages_under_int_root(
-        self, synced_pages, atlassian_client, confluence_space, test_repo
-    ):  # pylint: disable=redefined-outer-name
-        prefix = synced_pages
-        repo_name = test_repo.name
-        root = atlassian_client.get_page_by_title(
-            space=confluence_space, title=repo_name
-        )
-        assert root is not None, f"Integration root page '{repo_name}' not found"
-
-        children = atlassian_client.get_page_child_by_type(
-            root["id"], type="page", limit=200
-        )
-        child_titles = [c["title"] for c in children]
-        found = any(prefix in t for t in child_titles)
-        assert found, (
-            f"No test page with prefix '{prefix}' found as child of integration root. "
-            f"Children: {child_titles[:10]}"
-        )
-
-    def test_dry_run_creates_nothing(  # pylint: disable=redefined-outer-name
-        self, test_repo, settings, atlassian_client, confluence_space
-    ):
-        dry_prefix = f"dry-{uuid.uuid4().hex[:8]}"
-        ctx = Sync2CfContext(
-            settings,
-            repo_path=test_repo,
-            use_prod=False,
-            branch_name=dry_prefix,
-            dry_run=True,
-        )
         run_sync(ctx, preface_markup="", postface_markup="")
 
-        page = atlassian_client.get_page_by_title(
-            space=confluence_space,
-            title=f"{dry_prefix} - {dry_prefix} Root",
+    return ctx
+
+
+# ── Tests ─────────────────────────────────────────────────────────────────
+
+
+class TestFullSync:
+    def test_pages_created(self, mock_confluence, test_repo, unique_prefix):
+        _run_sync_with_mock(mock_confluence, test_repo)
+
+        # Homepage + at least the 2 markdown pages
+        assert len(mock_confluence.pages) >= 3
+
+    def test_root_page_exists(self, mock_confluence, test_repo, unique_prefix):
+        _run_sync_with_mock(mock_confluence, test_repo)
+
+        page = mock_confluence.get_page_by_title(f"{unique_prefix} Root")
+        assert page is not None, f"Root page '{unique_prefix} Root' not found"
+
+    def test_sub_page_exists(self, mock_confluence, test_repo, unique_prefix):
+        _run_sync_with_mock(mock_confluence, test_repo)
+
+        page = mock_confluence.get_page_by_title(f"{unique_prefix} Sub")
+        assert page is not None, f"Sub page '{unique_prefix} Sub' not found"
+
+    def test_root_page_has_content(self, mock_confluence, test_repo, unique_prefix):
+        _run_sync_with_mock(mock_confluence, test_repo)
+
+        page = mock_confluence.get_page_by_title(f"{unique_prefix} Root")
+        assert page is not None
+        body = page.body.storage.value
+        assert "Root page content" in body
+
+    def test_pages_under_homepage(self, mock_confluence, test_repo, unique_prefix):
+        _run_sync_with_mock(mock_confluence, test_repo)
+
+        children = mock_confluence.get_children(parent_id=1)
+        titles = [c.title for c in children]
+        assert any(unique_prefix in t for t in titles), (
+            f"No page with prefix '{unique_prefix}' under homepage. Children: {titles}"
         )
-        assert page is None, "Dry run should not create pages"
+
+    def test_relative_links_resolved(self, mock_confluence, test_repo, unique_prefix):
+        _run_sync_with_mock(mock_confluence, test_repo)
+
+        root = mock_confluence.get_page_by_title(f"{unique_prefix} Root")
+        assert root is not None
+        body = root.body.storage.value
+        # After link resolution, the body should contain mock.example.com URL
+        assert "mock.example.com" in body
+
+
+class TestIntegrationPrefix:
+    def test_prefix_applied_to_titles(
+        self, mock_confluence, test_repo, unique_prefix
+    ):
+        prefix = "feat/my-branch"
+        _run_sync_with_mock(mock_confluence, test_repo, prefix=prefix)
+
+        page = mock_confluence.get_page_by_title(
+            f"{prefix} - {unique_prefix} Root"
+        )
+        assert page is not None, "Prefixed root page not found"
+
+    def test_integration_root_created(
+        self, mock_confluence, test_repo, unique_prefix
+    ):
+        prefix = "feat/my-branch"
+        _run_sync_with_mock(mock_confluence, test_repo, prefix=prefix)
+
+        # Integration root page is named after the repo directory
+        repo_name = test_repo.name
+        root = mock_confluence.get_page_by_title(repo_name)
+        assert root is not None, f"Integration root '{repo_name}' not found"
+
+    def test_prefixed_pages_under_int_root(
+        self, mock_confluence, test_repo, unique_prefix
+    ):
+        prefix = "feat/my-branch"
+        _run_sync_with_mock(mock_confluence, test_repo, prefix=prefix)
+
+        repo_name = test_repo.name
+        root = mock_confluence.get_page_by_title(repo_name)
+        assert root is not None
+
+        children = mock_confluence.get_children(root.id)
+        titles = [c.title for c in children]
+        assert any(prefix in t for t in titles), (
+            f"No prefixed page under integration root. Children: {titles}"
+        )
+
+
+class TestPrefacePostface:
+    def test_preface_prepended(self, mock_confluence, test_repo, unique_prefix):
+        settings = _make_settings()
+        ctx = GitfluenceContext(
+            settings,
+            repo_path=test_repo,
+            use_prod=True,
+            branch_name="main",
+        )
+
+        with patch(
+            "gitfluence.confluence.MinimalConfluence",
+            return_value=mock_confluence,
+        ):
+            run_sync(ctx, preface_markup="<p>PREFACE</p>", postface_markup="")
+
+        root = mock_confluence.get_page_by_title(f"{unique_prefix} Root")
+        assert root is not None
+        assert root.body.storage.value.startswith("<p>PREFACE</p>")
+
+    def test_postface_appended(self, mock_confluence, test_repo, unique_prefix):
+        settings = _make_settings()
+        ctx = GitfluenceContext(
+            settings,
+            repo_path=test_repo,
+            use_prod=True,
+            branch_name="main",
+        )
+
+        with patch(
+            "gitfluence.confluence.MinimalConfluence",
+            return_value=mock_confluence,
+        ):
+            run_sync(ctx, preface_markup="", postface_markup="<p>POSTFACE</p>")
+
+        root = mock_confluence.get_page_by_title(f"{unique_prefix} Root")
+        assert root is not None
+        assert root.body.storage.value.endswith("<p>POSTFACE</p>")
+
+
+class TestDryRun:
+    def test_dry_run_creates_nothing(self, mock_confluence, test_repo):
+        _run_sync_with_mock(mock_confluence, test_repo, dry_run=True)
+
+        # Only the homepage should exist (pre-populated)
+        assert len(mock_confluence.pages) == 1
