@@ -20,6 +20,24 @@ pip install -e ".[dev,test]"
 pre-commit install
 ```
 
+## Project structure
+
+```
+gitfluence/         # Package source
+tests/              # Tests (unit + integration with mock Confluence)
+pyproject.toml      # Build config, dependencies, tool settings
+.bumpversion.cfg    # Version bump configuration
+.github/workflows/  # CI (lint + test) and deploy (PyPI + GitHub Release)
+```
+
+## Linting
+
+Linting runs automatically on `git push` via [pre-commit](https://pre-commit.com/) (configured with `pre-push` stage). To run manually:
+
+```bash
+pre-commit run --all-files
+```
+
 ## Testing
 
 Tests run against Python 3.12 and 3.13 via [tox](https://tox.wiki/):
@@ -39,24 +57,20 @@ Tests live in `tests/`. The test suite uses pytest, pytest-mock, pyfakefs, and r
 
 When mdfluence is installed in editable mode from a local clone, its own test suite is automatically collected and executed alongside gitfluence's tests. This ensures the underlying library API remains compatible.
 
-## Linting
+## Building
 
-Linting runs automatically on `git push` via [pre-commit](https://pre-commit.com/) (configured with `pre-push` stage). To run manually:
+Build the package using [build](https://pypa-build.readthedocs.io/):
 
 ```bash
-pre-commit run --all-files
+python -m build
+```
+
+This produces source and wheel distributions in `dist/`. To install the built package locally:
+
+```bash
+pip install dist/gitfluence-*.whl
 ```
 
 ## Releasing
 
 See [docs/releasing.md](docs/releasing.md) for the full release process, including version bumping, release candidates, and production publishing.
-
-## Project structure
-
-```
-gitfluence/         # Package source
-tests/              # Tests (unit + integration with mock Confluence)
-pyproject.toml      # Build config, dependencies, tool settings
-.bumpversion.cfg    # Version bump configuration
-.github/workflows/  # CI (lint + test) and deploy (PyPI + GitHub Release)
-```
