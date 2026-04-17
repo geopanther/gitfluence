@@ -1,0 +1,24 @@
+# Guard: must be sourced, not executed
+# Works in bash, zsh, dash, sh
+if [ -n "$ZSH_EVAL_CONTEXT" ]; then
+    case "$ZSH_EVAL_CONTEXT" in *:file) ;; *) echo "ERROR: source this file, don't execute it: . ./setenv.sh" >&2; exit 1 ;; esac
+elif [ -n "$BASH_VERSION" ]; then
+    (return 0 2>/dev/null) || { echo "ERROR: source this file, don't execute it: . ./setenv.sh" >&2; exit 1; }
+else
+    case "$0" in */setenv.sh) echo "ERROR: source this file, don't execute it: . ./setenv.sh" >&2; exit 1 ;; esac
+fi
+
+# Required: Confluence REST API base URL for production writes
+export CONFLUENCE_PROD_HOST="https://your-confluence.example.com/confluence/rest/api"
+
+# Required: Personal Access Token for production Confluence
+export CONFLUENCE_PROD_TOKEN="your-prod-token"
+
+# Optional: Separate integration Confluence instance (defaults to CONFLUENCE_PROD_HOST)
+# export CONFLUENCE_INT_HOST="https://your-confluence-int.example.com/confluence/rest/api"
+
+# Optional: Token for integration instance (prompted interactively if unset)
+# export CONFLUENCE_INT_TOKEN="your-int-token"
+
+# Required: Confluence space key to sync into
+export CONFLUENCE_SPACE="MYSPACE"

@@ -1,130 +1,125 @@
-# sync2cf
+# gitfluence
 
-Sync markdown files from any GitHub repo working tree to Confluence as a page hierarchy.
+Sync markdown files from any git repo working tree to Confluence as a page hierarchy.
 
-Uses [md2cf](https://github.com/geopanther/md2cf) (pre-integration branch) for markdown → Confluence conversion and upload. Pages are created as **children of the space's home page** (md2cf's `--top-level` behavior) — the space itself is never overwritten.
+Uses [mdfluence](https://github.com/geopanther/mdfluence) for markdown → Confluence conversion and upload. All mdfluence CLI options can be passed through gitfluence.
 
-This repo's own workflow (`.github/workflows/sync2cf.yml`) syncs its own README to Confluence as a working example.
+## Installation
+
+```bash
+pip install gitfluence
+```
 
 ## Usage
 
 ```bash
-python -m sync2cf <repo-path>            # auto-detect prod vs int
-python -m sync2cf --dry-run <repo-path>  # preview, no API calls
-python -m sync2cf --space MYSPACE .      # override space
-python -m sync2cf --prefix "DEV" .       # override auto-prefix
+gitfluence <repo-path>                   # auto-detect prod vs int
+gitfluence --dry-run <repo-path>         # preview, no API calls
+gitfluence --space MYSPACE .             # override space
+gitfluence --prefix "DEV" .              # override auto-prefix
+gitfluence --beautify-folders .          # pass mdfluence options
 ```
 
 ## Environment Variables
 
-| Variable | Default | Description |
+| Variable | Required | Description |
 |---|---|---|
-| `CONFLUENCE_PROD_HOST` | `https://atc.bmwgroup.net/confluence/rest/api` | Production Confluence REST API base URL |
-| `CONFLUENCE_PROD_TOKEN` | `dummy` on `--dry-run`, otherwise prompt if interactive | PAT for production writes |
-| `CONFLUENCE_INT_HOST` | `https://atc-int.bmwgroup.net/confluence/rest/api` | Integration Confluence REST API base URL |
-| `CONFLUENCE_INT_TOKEN` | `dummy` on `--dry-run`, otherwise prompt if interactive | PAT for integration writes |
-| `CONFLUENCE_SPACE` | `DRY_RUN` on `--dry-run`, otherwise prompt if interactive | Confluence space key |
+| `CONFLUENCE_PROD_HOST` | Yes | Production Confluence REST API base URL |
+| `CONFLUENCE_PROD_TOKEN` | Yes* | PAT for production writes |
+| `CONFLUENCE_INT_HOST` | No | Integration Confluence REST API base URL (defaults to prod) |
+| `CONFLUENCE_INT_TOKEN` | No* | PAT for integration writes |
+| `CONFLUENCE_SPACE` | Yes* | Confluence space key |
 
-`sync2cf` reads environment variables only. No `.env` file support.
+\* On `--dry-run`, missing tokens default to `dummy` and missing space defaults to `DRY_RUN`. In interactive mode, missing values are prompted.
 
-Token behavior:
+Copy `setenv.example.sh` to `setenv.sh` and fill in your values:
 
-- `--dry-run`: missing tokens default to `dummy`
-- `--dry-run`: missing space defaults to `DRY_RUN`
-- interactive non-dry-run: missing required token or space prompts on tty
-- non-interactive non-dry-run: missing required token fails fast
-
-Prompted tokens are exported into current `sync2cf` process environment only. Shell parent environment cannot be mutated by a child process.
+```bash
+cp setenv.example.sh setenv.sh
+# Edit setenv.sh with your Confluence details
+source setenv.sh
+```
 
 ## Prod vs Integration Logic
 
 | Condition | Write target | Prefix |
 |---|---|---|
-| On default branch, clean, up-to-date with remote | **Prod** (`CONFLUENCE_PROD_HOST`) | *(none)* |
-| Feature branch / dirty tree / behind remote | **Integration** (`CONFLUENCE_INT_HOST`, falls back to Prod) | Branch name |
-
-`CONFLUENCE_INT_HOST` falls back to `CONFLUENCE_PROD_HOST` when not set. `CONFLUENCE_INT_TOKEN` does not fall back to prod on real runs because prod and int credentials may differ.
-
-In CI (GitHub Actions), `pull_request` events check out a merge commit (detached HEAD). sync2cf reads `GITHUB_HEAD_REF` to resolve the actual branch name for the page prefix.
+| On default branch, clean, up-to-date with remote | **Prod** | *(none)* |
+| Feature branch / dirty tree / behind remote | **Integration** | Branch name |
 
 ## Page Hierarchy
 
-All root-level pages from the repo are created as **children of the Confluence space's home page**. Subdirectories become nested child pages, preserving the repo's folder structure. The space home page itself is never modified.
+All root-level pages from the repo are created as children of the Confluence space's home page. Subdirectories become nested child pages.
 
-### Integration Root Page
+In integration mode (feature branches), an empty root page named after the repository directory is created under the space's home page. All integration pages are placed as children of this root page.
 
-In integration mode (feature branches), an empty root page named after the repository directory (e.g. `my-repo`) is created under the space's home page. All integration pages are placed as children of this root page instead of directly under the homepage. This makes cleanup easy: delete the root page and all its descendants to remove all integration artifacts.
+## Reusable Workflow
 
-## Using sync2cf in Your Repo
-
-Add a workflow to your repo that checks out sync2cf and runs it against your own working tree:
+Consumer repos can integrate with a single `uses:` line:
 
 ```yaml
-# .github/workflows/sync-docs.yml
-name: Sync2Confluence
+name: Sync to Confluence
 
 on:
   push:
     branches: [main]
-    paths: ['README.md', 'doc/**']
   pull_request:
     branches: [main]
-    paths: ['README.md', 'doc/**']
-  workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
-  sync-docs:
-    runs-on: bmw-ubuntu-24.04-medium
-    timeout-minutes: 30
-    steps:
-      - name: Checkout your repo
-        uses: actions/checkout@v5
-
-      - name: Checkout sync2cf
-        uses: actions/checkout@v5
-        with:
-          repository: ToolsArsenal/sync2cf
-          path: .sync2cf
-          token: ${{ secrets.REPO_ACCESS_TOKEN }}
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
-
-      - name: Install sync2cf
-        run: uv sync --frozen --project .sync2cf
-
-      - name: Sync2Confluence
-        env:
-          CONFLUENCE_PROD_TOKEN: ${{ secrets.CONFLUENCE_PROD_TOKEN }}
-          CONFLUENCE_SPACE: ${{ vars.CONFLUENCE_SPACE }}
-        run: |
-          DRY_RUN=""
-          [ "${{ github.event_name }}" = "pull_request" ] && DRY_RUN="--dry-run"
-          uv run --project .sync2cf sync2cf $DRY_RUN .
+  sync:
+    uses: geopanther/gitfluence/.github/workflows/reusable-sync.yml@main
+    with:
+      repo_path: "."
+      extra_args: "--beautify-folders"
+    secrets:
+      CONFLUENCE_PROD_HOST: ${{ secrets.CONFLUENCE_PROD_HOST }}
+      CONFLUENCE_PROD_TOKEN: ${{ secrets.CONFLUENCE_PROD_TOKEN }}
+      CONFLUENCE_SPACE: ${{ secrets.CONFLUENCE_SPACE }}
 ```
 
-## Setup (Local)
+### Workflow inputs
+
+| Input | Default | Description |
+|---|---|---|
+| `repo_path` | `"."` | Root directory to sync |
+| `dry_run` | `false` | Preview mode |
+| `gitfluence_version` | `"latest"` | Version to install |
+| `runner` | `"ubuntu-latest"` | Runner label (GHE users can override) |
+| `python_version` | `"3.12"` | Python version |
+| `extra_args` | `""` | Additional CLI args |
+
+## CLI Options (mdfluence pass-through)
+
+gitfluence supports all mdfluence options. Key groups:
+
+**Page information:** `--title`, `--content-type`, `--message`, `--minor-edit`, `--strip-top-header`, `--remove-text-newlines`, `--replace-all-labels`
+
+**Parent selection** (mutually exclusive): `--parent-title` / `--parent-id` / `--top-level`
+
+**Preface** (mutually exclusive): `--preface-markdown` / `--preface-file`
+
+**Postface** (mutually exclusive): `--postface-markdown` / `--postface-file`
+
+**Directory:** `--collapse-single-pages`, `--no-gitignore`, `--skip-subtrees-wo-markdown`
+
+**Directory titles** (mutually exclusive): `--beautify-folders` / `--use-pages-file`
+
+**Empty dirs** (mutually exclusive): `--collapse-empty` / `--skip-empty`
+
+**Relative links:** `--enable-relative-links`, `--ignore-relative-link-errors`
+
+**Anchors:** `--convert-anchors` / `--no-convert-anchors`
+
+**General:** `--only-changed`, `--max-retries`, `--insecure`
+
+## Development
 
 ```bash
-uv sync              # install project + deps
-uv sync --extra dev  # include dev/test deps
+pip install -e ".[dev,test]"
+pytest
 ```
 
-## Project Structure
+## License
 
-```
-sync2cf/
-├── __init__.py
-├── __main__.py              # CLI entry point
-├── config.py                # Pydantic settings from env vars
-├── confluence.py            # md2cf orchestration
-├── git_info.py              # Git branch, remote, dirty detection
-├── postface.py              # Postface template rendering
-├── preface.md               # Warning banner prepended to every page
-└── postface.md.template     # Metadata footer appended to every page
-```
+MIT
