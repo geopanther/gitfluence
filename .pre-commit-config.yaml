@@ -1,5 +1,5 @@
 default_stages: [pre-commit, pre-push]
-default_install_hook_types: [pre-commit, pre-push]
+default_install_hook_types: [commit-msg, pre-commit, pre-push]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -36,6 +36,26 @@ repos:
         additional_dependencies:
           - prettier@3.6.2
         files: \.(json|md|yaml|yml)$
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.9.4
+    hooks:
+      - id: bandit
+        pass_filenames: false
+        args: ["-r", "gitfluence/"]
+        stages: [pre-push]
+
+  - repo: https://github.com/google/osv-scanner
+    rev: v2.3.5
+    hooks:
+      - id: osv-scanner
+        files: uv\.lock
+
+  - repo: https://github.com/jorisroovers/gitlint
+    rev: v0.19.1
+    hooks:
+      - id: gitlint
+        stages: [commit-msg]
 
   - repo: local
     hooks:

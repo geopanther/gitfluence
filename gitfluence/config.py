@@ -15,7 +15,7 @@ from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_DUMMY_HOST = "https://dummy.example.com/api"
-DEFAULT_DUMMY_SECRET = "dummy"
+DEFAULT_DUMMY_SECRET = "dummy"  # nosec B105 - not a real secret, placeholder for dry-run
 DEFAULT_DUMMY_SPACE = "DRY_RUN"
 
 
