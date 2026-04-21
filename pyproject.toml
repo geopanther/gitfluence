@@ -12,7 +12,7 @@ requires-python = ">=3.12"
 authors = [
     { name = "geopanther", email = "geopanther@mail.de" },
 ]
-keywords = ["markdown", "confluence", "git", "sync"]
+keywords = ["markdown", "confluence", "git", "sync", "md2cf", "mdfluence"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
@@ -43,6 +43,8 @@ dev = [
     "build",
     "pre-commit",
     "tox",
+    "identify>=2.6.19",
+    "ruff",
 ]
 test = [
     "pytest>=8.0",

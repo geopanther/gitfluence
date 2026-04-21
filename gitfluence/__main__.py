@@ -296,11 +296,9 @@ def main(  # pylint: disable=too-many-locals,too-many-statements
             postface_md = render_postface(
                 postface_ref.read_text(encoding="utf-8"), git_info
             )
-            postface_markup = (
-                mdfluence.document.parse_page(  # pylint: disable=no-member
-                    [postface_md]
-                ).body
-            )
+            postface_markup = mdfluence.document.parse_page(  # pylint: disable=no-member
+                [postface_md]
+            ).body
 
     # ── Run ───────────────────────────────────────────────────────────
     run_sync(ctx, preface_markup, postface_markup, args=args)

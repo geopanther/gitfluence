@@ -69,6 +69,7 @@ Go to the Actions tab, find the running workflow, and approve the `publish-testp
 ### 5. Verify on TestPyPI
 
 Check the package page at `https://test.pypi.org/project/gitfluence/X.Y.Z-rc1/` and confirm:
+
 - The package is listed
 - Attestations are present (visible under "Provenance")
 
@@ -130,9 +131,9 @@ Go to the Actions tab, find the running workflow, and approve the `publish-pypi`
 
 ## Workflows
 
-| Workflow | Trigger | Pipeline | Environment |
-|---|---|---|---|
-| `deploy-test.yml` | Any `v*` tag | build → TestPyPI | `pypi-publish-test` |
+| Workflow          | Trigger               | Pipeline               | Environment         |
+| ----------------- | --------------------- | ---------------------- | ------------------- |
+| `deploy-test.yml` | Any `v*` tag          | build → TestPyPI       | `pypi-publish-test` |
 | `deploy-prod.yml` | `vX.Y.Z` tags (no rc) | build → release → PyPI | `pypi-publish-prod` |
 
 ## Security

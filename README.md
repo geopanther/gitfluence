@@ -22,13 +22,13 @@ gitfluence --beautify-folders .          # pass mdfluence options
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `CONFLUENCE_PROD_HOST` | Yes | Production Confluence REST API base URL |
-| `CONFLUENCE_PROD_TOKEN` | Yes* | PAT for production writes |
-| `CONFLUENCE_INT_HOST` | No | Integration Confluence REST API base URL (defaults to prod) |
-| `CONFLUENCE_INT_TOKEN` | No* | PAT for integration writes |
-| `CONFLUENCE_SPACE` | Yes* | Confluence space key |
+| Variable                | Required | Description                                                 |
+| ----------------------- | -------- | ----------------------------------------------------------- |
+| `CONFLUENCE_PROD_HOST`  | Yes      | Production Confluence REST API base URL                     |
+| `CONFLUENCE_PROD_TOKEN` | Yes\*    | PAT for production writes                                   |
+| `CONFLUENCE_INT_HOST`   | No       | Integration Confluence REST API base URL (defaults to prod) |
+| `CONFLUENCE_INT_TOKEN`  | No\*     | PAT for integration writes                                  |
+| `CONFLUENCE_SPACE`      | Yes\*    | Confluence space key                                        |
 
 \* On `--dry-run`, missing tokens default to `dummy` and missing space defaults to `DRY_RUN`. In interactive mode, missing values are prompted.
 
@@ -42,10 +42,10 @@ source setenv.sh
 
 ## Prod vs Integration Logic
 
-| Condition | Write target | Prefix |
-|---|---|---|
-| On default branch, clean, up-to-date with remote | **Prod** | *(none)* |
-| Feature branch / dirty tree / behind remote | **Integration** | Branch name |
+| Condition                                        | Write target    | Prefix      |
+| ------------------------------------------------ | --------------- | ----------- |
+| On default branch, clean, up-to-date with remote | **Prod**        | _(none)_    |
+| Feature branch / dirty tree / behind remote      | **Integration** | Branch name |
 
 ## Page Hierarchy
 
@@ -80,14 +80,14 @@ jobs:
 
 ### Workflow inputs
 
-| Input | Default | Description |
-|---|---|---|
-| `repo_path` | `"."` | Root directory to sync |
-| `dry_run` | `false` | Preview mode |
-| `gitfluence_version` | `"latest"` | Version to install |
-| `runner` | `"ubuntu-latest"` | Runner label (GHE users can override) |
-| `python_version` | `"3.12"` | Python version |
-| `extra_args` | `""` | Additional CLI args |
+| Input                | Default           | Description                           |
+| -------------------- | ----------------- | ------------------------------------- |
+| `repo_path`          | `"."`             | Root directory to sync                |
+| `dry_run`            | `false`           | Preview mode                          |
+| `gitfluence_version` | `"latest"`        | Version to install                    |
+| `runner`             | `"ubuntu-latest"` | Runner label (GHE users can override) |
+| `python_version`     | `"3.12"`          | Python version                        |
+| `extra_args`         | `""`              | Additional CLI args                   |
 
 ## CLI Options (mdfluence pass-through)
 
