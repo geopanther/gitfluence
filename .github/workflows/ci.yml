@@ -10,9 +10,8 @@ jobs:
           python-version: "3.x"
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
         with:
-          extra_args: --all-files --hook-stage pre-push
-        env:
-          SKIP: tox
+          extra_args: --all-files --hook-stage pre-commit
+
   test:
     runs-on: ubuntu-latest
     steps:
