@@ -8,29 +8,17 @@ from pathlib import Path
 import pytest
 from pydantic import SecretStr
 
-from gitfluence.config import GitfluenceContext, GitfluenceSettings
+from gitfluence.config import (
+    DEFAULT_DUMMY_HOST,
+    DEFAULT_DUMMY_SECRET,
+    DEFAULT_DUMMY_SPACE,
+    GitfluenceContext,
+    GitfluenceSettings,
+)
 
 
 class TestGitfluenceSettings:
-    def test_required_prod_host_from_env(self, monkeypatch):
-        monkeypatch.setenv("CONFLUENCE_PROD_HOST", "https://prod.example.com/api")
-        for name in [
-            "CONFLUENCE_PROD_TOKEN",
-            "CONFLUENCE_INT_HOST",
-            "CONFLUENCE_INT_TOKEN",
-            "CONFLUENCE_SPACE",
-        ]:
-            monkeypatch.delenv(name, raising=False)
-
-        s = GitfluenceSettings()
-
-        assert s.confluence_prod_host == "https://prod.example.com/api"
-        assert s.confluence_prod_token is None
-        assert s.confluence_int_host is None
-        assert s.confluence_int_token is None
-        assert s.confluence_space is None
-
-    def test_missing_prod_host_raises(self, monkeypatch):
+    def test_nothing_from_env(self, monkeypatch):
         for name in [
             "CONFLUENCE_PROD_HOST",
             "CONFLUENCE_PROD_TOKEN",
@@ -40,23 +28,26 @@ class TestGitfluenceSettings:
         ]:
             monkeypatch.delenv(name, raising=False)
 
-        with pytest.raises(Exception):
-            GitfluenceSettings()
+        s = GitfluenceSettings()
+
+        assert s.confluence_prod_host is None
+        assert s.confluence_prod_token is None
+        assert s.confluence_int_host is None
+        assert s.confluence_int_token is None
+        assert s.confluence_space is None
 
     def test_defaults_from_env(self, monkeypatch):
         monkeypatch.setenv("CONFLUENCE_PROD_HOST", "https://prod.example.com/api")
         monkeypatch.setenv("CONFLUENCE_PROD_TOKEN", "tok-prod")
         monkeypatch.setenv("CONFLUENCE_SPACE", "MYSPACE")
+        monkeypatch.setenv("CONFLUENCE_INT_HOST", "https://int.example.com/api")
+        monkeypatch.setenv("CONFLUENCE_INT_TOKEN", "tok-int")
         s = GitfluenceSettings()
         assert s.confluence_prod_host == "https://prod.example.com/api"
         assert s.confluence_prod_token.get_secret_value() == "tok-prod"
+        assert s.confluence_int_host == "https://int.example.com/api"
+        assert s.confluence_int_token.get_secret_value() == "tok-int"
         assert s.confluence_space == "MYSPACE"
-
-    def test_int_token_defaults_to_none(self, monkeypatch):
-        monkeypatch.setenv("CONFLUENCE_PROD_HOST", "https://prod.example.com/api")
-        monkeypatch.delenv("CONFLUENCE_INT_TOKEN", raising=False)
-        s = GitfluenceSettings()
-        assert s.confluence_int_token is None
 
 
 class TestGitfluenceContext:
@@ -80,6 +71,19 @@ class TestGitfluenceContext:
         assert ctx.write_host == "https://prod.example.com/api"
         assert ctx.write_token.get_secret_value() == "tok-prod"
         assert ctx.prefix is None
+
+    def test_prod_mode_raises(self):
+        s = self._make_settings()
+        s.confluence_prod_host
+
+    def test_prod_mode_dry_run_defaults(self):
+        s = GitfluenceSettings()
+        ctx = GitfluenceContext(
+            s, repo_path=Path("/tmp"), use_prod=True, branch_name="main", dry_run=True
+        )
+        assert ctx.write_host == DEFAULT_DUMMY_HOST
+        assert ctx.write_token.get_secret_value() == DEFAULT_DUMMY_SECRET
+        assert ctx.space == DEFAULT_DUMMY_SPACE
 
     def test_int_mode_falls_back_to_prod(self):
         s = self._make_settings()
@@ -107,6 +111,14 @@ class TestGitfluenceContext:
         assert ctx.write_token.get_secret_value() == "tok-int"
         assert ctx.prefix == "dev"
 
+    def test_missing_prod_host_non_interactive(self, monkeypatch):
+        monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: False})())
+        s = self._make_settings(confluence_prod_host=None)
+        with pytest.raises(SystemExit, match="CONFLUENCE_PROD_HOST"):
+            GitfluenceContext(
+                s, repo_path=Path("/tmp"), use_prod=True, branch_name="main"
+            )
+
     def test_missing_token_non_interactive(self, monkeypatch):
         monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: False})())
         s = self._make_settings(confluence_prod_token=None)
@@ -128,6 +140,27 @@ class TestGitfluenceContext:
             dry_run=True,
         )
         assert ctx.write_token.get_secret_value() == "dummy"
+
+    def test_prompt_prod_host_exports(self, monkeypatch):
+        prompts = []
+
+        monkeypatch.setattr("sys.stdin", type("F", (), {"isatty": lambda s: True})())
+        monkeypatch.setattr(
+            "builtins.input",
+            lambda prompt: prompts.append(prompt) or "https://prod.example.com/api",
+        )
+        monkeypatch.delenv("CONFLUENCE_PROD_HOST", raising=False)
+        s = self._make_settings(confluence_prod_host=None)
+        ctx = GitfluenceContext(
+            s,
+            repo_path=Path("/tmp"),
+            use_prod=True,
+            branch_name="main",
+            dry_run=False,
+        )
+        assert ctx.write_host == "https://prod.example.com/api"
+        assert os.environ["CONFLUENCE_PROD_HOST"] == "https://prod.example.com/api"
+        assert prompts == ["CONFLUENCE_PROD_HOST (or set before run): "]
 
     def test_prompt_prod_token_exports(self, monkeypatch):
         prompts = []

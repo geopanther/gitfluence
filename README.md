@@ -30,7 +30,7 @@ gitfluence --beautify-folders .          # pass mdfluence options
 | `CONFLUENCE_INT_TOKEN`  | No\*     | PAT for integration writes                                  |
 | `CONFLUENCE_SPACE`      | Yes\*    | Confluence space key                                        |
 
-\* On `--dry-run`, missing tokens default to `dummy` and missing space defaults to `DRY_RUN`. In interactive mode, missing values are prompted.
+\* On `--dry-run`, missing host defaults to `https://dummy.example.com/api`, missing tokens default to `dummy` and missing space defaults to `DRY_RUN`. In interactive mode, missing values are prompted.
 
 Copy `setenv.example.sh` to `setenv.sh` and fill in your values:
 
