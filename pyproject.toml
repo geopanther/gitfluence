@@ -35,7 +35,6 @@ gitfluence = "gitfluence.__main__:main"
 dev = [
     "bump2version",
     "pre-commit",
-    "tox",
     "identify>=2.6.19",
     "ruff",
 ]
