@@ -10,13 +10,9 @@ git clone https://github.com/geopanther/gitfluence.git
 cd gitfluence
 
 # Create a virtual environment
-python3.12 -m venv .venv --prompt gitfluence
-source .venv/bin/activate
+uv sync --python 3.12 --extra dev --extra test
 
-# Install the package with dev and test dependencies
-pip install -e ".[dev,test]"
-
-# Set up pre-commit hooks
+# Set up pre-commit hooks (install pre-commit on your developer client first)
 pre-commit install
 ```
 
@@ -32,7 +28,7 @@ pyproject.toml      # Build config, dependencies, tool settings
 
 ## Linting
 
-Linting runs automatically on `git push` via [pre-commit](https://pre-commit.com/) (configured with `pre-push` stage). To run manually:
+Linting runs automatically on `git-commit`, via [pre-commit](https://pre-commit.com/). To run manually:
 
 ```bash
 pre-commit run --all-files
@@ -59,16 +55,16 @@ When mdfluence is installed in editable mode from a local clone, its own test su
 
 ## Building
 
-Build the package using [build](https://pypa-build.readthedocs.io/):
+Build the package using [uv](https://docs.astral.sh/uv/concepts/projects/build/):
 
 ```bash
-python -m build
+uv build
 ```
 
-This produces source and wheel distributions in `dist/`. To install the built package locally:
+This produces source and wheel distributions in `dist/`. To test install the built package locally:
 
 ```bash
-pip install dist/gitfluence-*.whl
+uv pip install dist/gitfluence-*.whl
 ```
 
 ## Releasing

@@ -47,7 +47,7 @@ repos:
         stages: [pre-commit]
       - id: tox
         name: tox
-        entry: .venv/bin/tox -e py312
+        entry: uv run tox -e py312
         language: system
         always_run: true
         pass_filenames: false

@@ -76,7 +76,7 @@ Check the package page at `https://test.pypi.org/project/gitfluence/X.Y.Z-rc1/` 
 To test installation:
 
 ```bash
-pip install -i https://test.pypi.org/simple/ gitfluence==X.Y.Z-rc1
+uv pip install -i https://test.pypi.org/simple/ gitfluence==X.Y.Z-rc1
 ```
 
 ### 6. Iterate if needed
