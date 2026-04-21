@@ -41,7 +41,7 @@ repos:
     hooks:
       - id: revert-changelog-rc
         name: revert changelog rc headings
-        entry: .venv/bin/python scripts/revert_changelog_rc.py
+        entry: uv run scripts/revert_changelog_rc.py
         language: system
         files: CHANGELOG.md
         stages: [pre-commit]
