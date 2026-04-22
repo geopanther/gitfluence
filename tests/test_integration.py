@@ -119,9 +119,9 @@ class TestFullSync:
 
         children = mock_confluence.get_children(parent_id=1)
         titles = [c.title for c in children]
-        assert any(
-            unique_prefix in t for t in titles
-        ), f"No page with prefix '{unique_prefix}' under homepage. Children: {titles}"
+        assert any(unique_prefix in t for t in titles), (
+            f"No page with prefix '{unique_prefix}' under homepage. Children: {titles}"
+        )
 
     def test_relative_links_resolved(self, mock_confluence, test_repo, unique_prefix):
         _run_sync_with_mock(mock_confluence, test_repo)
@@ -162,9 +162,9 @@ class TestIntegrationPrefix:
 
         children = mock_confluence.get_children(root.id)
         titles = [c.title for c in children]
-        assert any(
-            prefix in t for t in titles
-        ), f"No prefixed page under integration root. Children: {titles}"
+        assert any(prefix in t for t in titles), (
+            f"No prefixed page under integration root. Children: {titles}"
+        )
 
 
 class TestPrefacePostface:

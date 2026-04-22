@@ -14,12 +14,9 @@ from typing import Optional
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-DEFAULT_DUMMY_TOKEN = "dummy"
-DEFAULT_DRY_RUN_SPACE = "DRY_RUN"
-
-
-def _prompt_text(env_name: str) -> str:
-    return f"{env_name} (or set before run): "
+DEFAULT_DUMMY_HOST = "https://dummy.example.com/api"
+DEFAULT_DUMMY_SECRET = "dummy"  # nosec B105 - not a real secret, placeholder for dry-run
+DEFAULT_DUMMY_SPACE = "DRY_RUN"
 
 
 class GitfluenceSettings(BaseSettings):
@@ -28,7 +25,7 @@ class GitfluenceSettings(BaseSettings):
     model_config = SettingsConfigDict()
 
     # ── Confluence hosts & tokens ──────────────────────────────────────
-    confluence_prod_host: str
+    confluence_prod_host: Optional[str] = None
     confluence_prod_token: Optional[SecretStr] = None
 
     confluence_int_host: Optional[str] = None
@@ -62,8 +59,12 @@ class GitfluenceContext:
 
         # ── Effective write target ─────────────────────────────────────
         if use_prod:
-            self.write_host: str = settings.confluence_prod_host
-            self.write_token = self._require_token(
+            self.write_host: str = self._require_host(
+                settings.confluence_prod_host,
+                "CONFLUENCE_PROD_HOST",
+                dry_run=dry_run,
+            )
+            self.write_token = self._require_secret(
                 prod_token,
                 "CONFLUENCE_PROD_TOKEN",
                 dry_run=dry_run,
@@ -71,7 +72,7 @@ class GitfluenceContext:
             self.prefix: Optional[str] = None
         else:
             self.write_host = int_host
-            self.write_token = self._require_token(
+            self.write_token = self._require_secret(
                 settings.confluence_int_token,
                 "CONFLUENCE_INT_TOKEN",
                 dry_run=dry_run,
@@ -82,18 +83,38 @@ class GitfluenceContext:
 
     # ── helpers ────────────────────────────────────────────────────────
     @staticmethod
-    def _require_token(
-        token: Optional[SecretStr], env_name: str, *, dry_run: bool
-    ) -> SecretStr:
-        if token is not None:
-            return token
+    def _prompt_text(env_name: str) -> str:
+        return f"{env_name} (or set before run): "
+
+    @staticmethod
+    def _require_host(host: Optional[str], env_name: str, *, dry_run: bool) -> str:
+        if host is not None:
+            return host
         if dry_run:
-            return SecretStr(DEFAULT_DUMMY_TOKEN)
+            return DEFAULT_DUMMY_HOST
         if not sys.stdin.isatty():
             raise SystemExit(
                 f"ERROR: {env_name} is not set and stdin is not a terminal."
             )
-        value = getpass.getpass(_prompt_text(env_name))
+        value = input(GitfluenceContext._prompt_text("CONFLUENCE_PROD_HOST")).strip()
+        if not value:
+            raise SystemExit("ERROR: CONFLUENCE_PROD_HOST cannot be empty.")
+        os.environ["CONFLUENCE_PROD_HOST"] = value
+        return value
+
+    @staticmethod
+    def _require_secret(
+        secret: Optional[SecretStr], env_name: str, *, dry_run: bool
+    ) -> SecretStr:
+        if secret is not None:
+            return secret
+        if dry_run:
+            return SecretStr(DEFAULT_DUMMY_SECRET)
+        if not sys.stdin.isatty():
+            raise SystemExit(
+                f"ERROR: {env_name} is not set and stdin is not a terminal."
+            )
+        value = getpass.getpass(GitfluenceContext._prompt_text(env_name))
         if not value:
             raise SystemExit(f"ERROR: {env_name} cannot be empty.")
         env_var_name = env_name.split(" ", maxsplit=1)[0]
@@ -105,12 +126,12 @@ class GitfluenceContext:
         if space:
             return space
         if dry_run:
-            return DEFAULT_DRY_RUN_SPACE
+            return DEFAULT_DUMMY_SPACE
         if not sys.stdin.isatty():
             raise SystemExit(
                 "ERROR: CONFLUENCE_SPACE is not set and stdin is not a terminal."
             )
-        value = input(_prompt_text("CONFLUENCE_SPACE")).strip()
+        value = input(GitfluenceContext._prompt_text("CONFLUENCE_SPACE")).strip()
         if not value:
             raise SystemExit("ERROR: CONFLUENCE_SPACE cannot be empty.")
         os.environ["CONFLUENCE_SPACE"] = value

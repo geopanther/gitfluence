@@ -2,7 +2,18 @@
 
 gitfluence syncs markdown files from a git repository to Confluence. Built on top of [mdfluence](https://github.com/geopanther/mdfluence). Requires Python 3.12+.
 
+## Prerequisites
+
+The following tools must be installed on your system before setting up the project:
+
+- [git](https://git-scm.com/downloads)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
+- [pre-commit](https://pre-commit.com/#install)
+- [osv-scanner](https://google.github.io/osv-scanner/installation/)
+
 ## Setup
+
+### macOS / Linux
 
 ```bash
 # Clone the repo
@@ -10,15 +21,37 @@ git clone https://github.com/geopanther/gitfluence.git
 cd gitfluence
 
 # Create a virtual environment
-python3.12 -m venv .venv --prompt gitfluence
-source .venv/bin/activate
-
-# Install the package with dev and test dependencies
-pip install -e ".[dev,test]"
+uv sync --python 3.12 --extra dev --extra test
 
 # Set up pre-commit hooks
 pre-commit install
+
+# Create your local environment file and configure it
+cp setenv.example.sh setenv.sh
+# Edit setenv.sh with your Confluence credentials, then:
+source setenv.sh
 ```
+
+### Windows (PowerShell)
+
+```powershell
+# Clone the repo
+git clone https://github.com/geopanther/gitfluence.git
+cd gitfluence
+
+# Create a virtual environment
+uv sync --python 3.12 --extra dev --extra test
+
+# Set up pre-commit hooks
+pre-commit install
+
+# Create your local environment file and configure it
+Copy-Item setenv.example.ps1 setenv.ps1
+# Edit setenv.ps1 with your Confluence credentials, then:
+. .\setenv.ps1
+```
+
+Sourcing `setenv.sh` (or dot-sourcing `setenv.ps1` on Windows) sets required environment variables and adds a `uv` wrapper that automatically runs `osv-scanner` after lockfile-changing commands (`uv lock`, `uv add`, `uv remove`, `uv sync`).
 
 ## Project structure
 
@@ -32,7 +65,7 @@ pyproject.toml      # Build config, dependencies, tool settings
 
 ## Linting
 
-Linting runs automatically on `git push` via [pre-commit](https://pre-commit.com/) (configured with `pre-push` stage). To run manually:
+Linting runs automatically on `git-commit`, via [pre-commit](https://pre-commit.com/). To run manually:
 
 ```bash
 pre-commit run --all-files
@@ -59,16 +92,16 @@ When mdfluence is installed in editable mode from a local clone, its own test su
 
 ## Building
 
-Build the package using [build](https://pypa-build.readthedocs.io/):
+Build the package using [uv](https://docs.astral.sh/uv/concepts/projects/build/):
 
 ```bash
-python -m build
+uv build
 ```
 
-This produces source and wheel distributions in `dist/`. To install the built package locally:
+This produces source and wheel distributions in `dist/`. To test install the built package locally:
 
 ```bash
-pip install dist/gitfluence-*.whl
+uv pip install dist/gitfluence-*.whl
 ```
 
 ## Releasing

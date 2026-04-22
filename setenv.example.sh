@@ -22,3 +22,18 @@ export CONFLUENCE_PROD_TOKEN="your-prod-token"
 
 # Required: Confluence space key to sync into
 export CONFLUENCE_SPACE="MYSPACE"
+
+# uv wrapper: auto-run osv-scanner after lockfile-changing commands
+uv() {
+  command uv "$@"
+  local rc=$?
+  if [[ $rc -eq 0 ]] && command -v osv-scanner &>/dev/null; then
+    case "$1" in
+      lock|add|remove|sync)
+        echo "🔍 Running osv-scanner..."
+        osv-scanner --lockfile uv.lock
+        ;;
+    esac
+  fi
+  return $rc
+}

@@ -1,7 +1,3 @@
-[build-system]
-requires = ["setuptools>=68.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "gitfluence"
 version = "0.1.0"
@@ -12,7 +8,7 @@ requires-python = ">=3.12"
 authors = [
     { name = "geopanther", email = "geopanther@mail.de" },
 ]
-keywords = ["markdown", "confluence", "git", "sync"]
+keywords = ["markdown", "confluence", "git", "sync", "md2cf", "mdfluence"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
@@ -24,6 +20,7 @@ dependencies = [
     "gitpython>=3.1.46",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
+    "identify>=2.6.19",
 ]
 
 [project.urls]
@@ -34,48 +31,33 @@ Changelog = "https://github.com/geopanther/gitfluence/blob/main/CHANGELOG.md"
 [project.scripts]
 gitfluence = "gitfluence.__main__:main"
 
-[tool.setuptools]
-packages = ["gitfluence"]
-
 [project.optional-dependencies]
 dev = [
     "bump2version",
-    "build",
-    "pre-commit",
-    "tox",
+    "identify>=2.6.19",
+    "ruff",
 ]
 test = [
     "pytest>=8.0",
     "pytest-mock",
     "pyfakefs",
     "requests-mock",
+    "tox",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.tox]
 envlist = ["py312", "py313"]
 
 [tool.tox.env_run_base]
-deps = [
-    "pytest",
-    "pytest-mock",
-    "pyfakefs",
-    "requests-mock",
-    "pylint",
-]
-set_env = {CONFLUENCE_PROD_HOST = "https://dummy.example.com/api"}
+extras = ["test"]
 commands = [
-    ["pylint", "--rcfile=.pylintrc", "gitfluence"],
     ["pytest"],
     ["gitfluence", "--dry-run", "."],
 ]
-
-[tool.isort]
-profile = "black"
-line_length = 88
-
-[tool.black]
-line-length = 88
-target-version = ["py312"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
