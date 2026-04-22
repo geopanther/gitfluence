@@ -32,13 +32,39 @@ gitfluence --beautify-folders .          # pass mdfluence options
 
 \* On `--dry-run`, missing host defaults to `https://dummy.example.com/api`, missing tokens default to `dummy` and missing space defaults to `DRY_RUN`. In interactive mode, missing values are prompted.
 
+<details open>
+<summary><b>macOS / Linux</b></summary>
+
 Copy `setenv.example.sh` to `setenv.sh` and fill in your values:
 
 ```bash
 cp setenv.example.sh setenv.sh
-# Edit setenv.sh with your Confluence details
+```
+
+Edit `setenv.sh` with your Confluence details.
+
+```bash
 source setenv.sh
 ```
+
+</details>
+
+<details>
+<summary><b>Windows (PowerShell)</b></summary>
+
+Copy `setenv.example.ps1` to `setenv.ps1` and fill in your values:
+
+```powershell
+Copy-Item setenv.example.ps1 setenv.ps1
+```
+
+Edit setenv.ps1 with your Confluence details.
+
+```powershell
+. .\setenv.ps1
+```
+
+</details>
 
 ## Prod vs Integration Logic
 
@@ -80,14 +106,14 @@ jobs:
 
 ### Workflow inputs
 
-| Input                | Default           | Description                           |
-| -------------------- | ----------------- | ------------------------------------- |
-| `repo_path`          | `"."`             | Root directory to sync                |
-| `dry_run`            | `false`           | Preview mode                          |
-| `gitfluence_version` | `"latest"`        | Version to install                    |
-| `runner`             | `"ubuntu-latest"` | Runner label (GHE users can override) |
-| `python_version`     | `"3.12"`          | Python version                        |
-| `extra_args`         | `""`              | Additional CLI args                   |
+| Input                | Default           | Description                       |
+| -------------------- | ----------------- | --------------------------------- |
+| `repo_path`          | `"."`             | Root directory to sync            |
+| `dry_run`            | `false`           | Preview mode                      |
+| `gitfluence_version` | `"latest"`        | Version to install                |
+| `runner`             | `"ubuntu-latest"` | Runner label (users can override) |
+| `python_version`     | `"3.12"`          | Python version                    |
+| `extra_args`         | `""`              | Additional CLI args               |
 
 ## CLI Options (mdfluence pass-through)
 
