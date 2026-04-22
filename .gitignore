@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 .env
 setenv.sh
+setenv.ps1
 .DS_Store
 *.egg-info/
 dist/

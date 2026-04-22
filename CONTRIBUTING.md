@@ -2,7 +2,18 @@
 
 gitfluence syncs markdown files from a git repository to Confluence. Built on top of [mdfluence](https://github.com/geopanther/mdfluence). Requires Python 3.12+.
 
+## Prerequisites
+
+The following tools must be installed on your system before setting up the project:
+
+- [git](https://git-scm.com/downloads)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
+- [pre-commit](https://pre-commit.com/#install)
+- [osv-scanner](https://google.github.io/osv-scanner/installation/)
+
 ## Setup
+
+### macOS / Linux
 
 ```bash
 # Clone the repo
@@ -12,9 +23,35 @@ cd gitfluence
 # Create a virtual environment
 uv sync --python 3.12 --extra dev --extra test
 
-# Set up pre-commit hooks (install pre-commit on your developer client first)
+# Set up pre-commit hooks
 pre-commit install
+
+# Create your local environment file and configure it
+cp setenv.example.sh setenv.sh
+# Edit setenv.sh with your Confluence credentials, then:
+source setenv.sh
 ```
+
+### Windows (PowerShell)
+
+```powershell
+# Clone the repo
+git clone https://github.com/geopanther/gitfluence.git
+cd gitfluence
+
+# Create a virtual environment
+uv sync --python 3.12 --extra dev --extra test
+
+# Set up pre-commit hooks
+pre-commit install
+
+# Create your local environment file and configure it
+Copy-Item setenv.example.ps1 setenv.ps1
+# Edit setenv.ps1 with your Confluence credentials, then:
+. .\setenv.ps1
+```
+
+Sourcing `setenv.sh` (or dot-sourcing `setenv.ps1` on Windows) sets required environment variables and adds a `uv` wrapper that automatically runs `osv-scanner` after lockfile-changing commands (`uv lock`, `uv add`, `uv remove`, `uv sync`).
 
 ## Project structure
 
