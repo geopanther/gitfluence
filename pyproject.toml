@@ -34,7 +34,6 @@ gitfluence = "gitfluence.__main__:main"
 [project.optional-dependencies]
 dev = [
     "bump2version",
-    "pre-commit",
     "identify>=2.6.19",
     "ruff",
 ]
