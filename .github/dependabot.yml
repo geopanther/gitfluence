@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Python dependencies (uv/pip ecosystem)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      dependencies:
+        patterns: ["*"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns: ["*"]
