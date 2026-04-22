@@ -1,0 +1,78 @@
+name: "Gitfluence Sync"
+description: "Sync markdown files from a git repository to Confluence as a page hierarchy"
+author: "gitfluence"
+
+branding:
+  icon: "upload-cloud"
+  color: "blue"
+
+inputs:
+  repo_path:
+    description: "Root directory of the git working tree to sync"
+    required: false
+    default: "."
+  dry_run:
+    description: "Preview mode — no Confluence API calls"
+    required: false
+    default: "false"
+  gitfluence_version:
+    description: "gitfluence version to install (e.g. '0.1.0' or 'latest')"
+    required: false
+    default: "latest"
+  python_version:
+    description: "Python version to use"
+    required: false
+    default: "3.12"
+  extra_args:
+    description: "Additional CLI arguments passed to gitfluence (e.g. '--skip-empty --beautify-folders')"
+    required: false
+    default: ""
+  confluence_prod_host:
+    description: "Confluence production host URL"
+    required: true
+  confluence_prod_token:
+    description: "Confluence production API token"
+    required: true
+  confluence_int_host:
+    description: "Confluence integration host URL"
+    required: false
+    default: ""
+  confluence_int_token:
+    description: "Confluence integration API token"
+    required: false
+    default: ""
+  confluence_space:
+    description: "Confluence space key"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python ${{ inputs.python_version }}
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: ${{ inputs.python_version }}
+
+    - name: Install gitfluence
+      shell: bash
+      run: |
+        if [ "${{ inputs.gitfluence_version }}" = "latest" ]; then
+          pip install gitfluence
+        else
+          pip install "gitfluence==${{ inputs.gitfluence_version }}"
+        fi
+
+    - name: Sync to Confluence
+      shell: bash
+      env:
+        CONFLUENCE_PROD_HOST: ${{ inputs.confluence_prod_host }}
+        CONFLUENCE_PROD_TOKEN: ${{ inputs.confluence_prod_token }}
+        CONFLUENCE_INT_HOST: ${{ inputs.confluence_int_host }}
+        CONFLUENCE_INT_TOKEN: ${{ inputs.confluence_int_token }}
+        CONFLUENCE_SPACE: ${{ inputs.confluence_space }}
+      run: |
+        DRY_RUN_FLAG=""
+        if [ "${{ inputs.dry_run }}" = "true" ]; then
+          DRY_RUN_FLAG="--dry-run"
+        fi
+        gitfluence $DRY_RUN_FLAG ${{ inputs.extra_args }} ${{ inputs.repo_path }}

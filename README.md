@@ -79,9 +79,9 @@ All root-level pages from the repo are created as children of the Confluence spa
 
 In integration mode (feature branches), an empty root page named after the repository directory is created under the space's home page. All integration pages are placed as children of this root page.
 
-## Reusable Workflow
+## GitHub Action
 
-Consumer repos can integrate with a single `uses:` line:
+Consumer repos can integrate using the composite action:
 
 ```yaml
 name: Sync to Confluence
@@ -94,26 +94,32 @@ on:
 
 jobs:
   sync:
-    uses: geopanther/gitfluence/.github/workflows/reusable-sync.yml@main
-    with:
-      repo_path: "."
-      extra_args: "--beautify-folders"
-    secrets:
-      CONFLUENCE_PROD_HOST: ${{ secrets.CONFLUENCE_PROD_HOST }}
-      CONFLUENCE_PROD_TOKEN: ${{ secrets.CONFLUENCE_PROD_TOKEN }}
-      CONFLUENCE_SPACE: ${{ secrets.CONFLUENCE_SPACE }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: geopanther/gitfluence@main
+        with:
+          repo_path: "."
+          extra_args: "--beautify-folders"
+          confluence_prod_host: ${{ secrets.CONFLUENCE_PROD_HOST }}
+          confluence_prod_token: ${{ secrets.CONFLUENCE_PROD_TOKEN }}
+          confluence_space: ${{ secrets.CONFLUENCE_SPACE }}
 ```
 
-### Workflow inputs
+### Action inputs
 
-| Input                | Default           | Description                       |
-| -------------------- | ----------------- | --------------------------------- |
-| `repo_path`          | `"."`             | Root directory to sync            |
-| `dry_run`            | `false`           | Preview mode                      |
-| `gitfluence_version` | `"latest"`        | Version to install                |
-| `runner`             | `"ubuntu-latest"` | Runner label (users can override) |
-| `python_version`     | `"3.12"`          | Python version                    |
-| `extra_args`         | `""`              | Additional CLI args               |
+| Input                   | Default    | Description                      |
+| ----------------------- | ---------- | -------------------------------- |
+| `repo_path`             | `"."`      | Root directory to sync           |
+| `dry_run`               | `"false"`  | Preview mode                     |
+| `gitfluence_version`    | `"latest"` | Version to install               |
+| `python_version`        | `"3.12"`   | Python version                   |
+| `extra_args`            | `""`       | Additional CLI args              |
+| `confluence_prod_host`  | —          | Confluence production host URL   |
+| `confluence_prod_token` | —          | Confluence production API token  |
+| `confluence_int_host`   | `""`       | Confluence integration host URL  |
+| `confluence_int_token`  | `""`       | Confluence integration API token |
+| `confluence_space`      | —          | Confluence space key             |
 
 ## CLI Options (mdfluence pass-through)
 

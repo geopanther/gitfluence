@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sync markdown files from a git repo to Confluence as a page hierarchy
 - Automatic prod vs integration routing based on git branch state
 - Pass-through support for all mdfluence CLI options
-- Reusable GitHub Actions workflow for consumer repos
+- Composite GitHub Action for consumer repos (replaces reusable workflow)
 - Bundled preface/postface templates with git metadata
 - Relative link resolution across pages
 - Integration root page isolation for feature branches
