@@ -17,6 +17,8 @@ jobs:
           version: "0.9.26"
       - name: Install Python 3.12
         run: uv python install 3.12
+      - name: Install dependencies
+        run: uv sync --group dev
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
         with:
           extra_args: --all-files --hook-stage pre-push
@@ -30,4 +32,4 @@ jobs:
         with:
           version: "0.11.7"
       - name: Test with tox
-        run: uvx --python 3.12 tox
+        run: uv run --group test tox
