@@ -32,7 +32,7 @@ Use this to test a release on TestPyPI before publishing to production.
 
 ```bash
 git checkout -b chore/bump-X.Y.Z-rc1
-bump2version --new-version X.Y.Z-rc1 patch
+uv run bump2version --new-version X.Y.Z-rc1 patch
 ```
 
 This replaces the `## Unreleased` heading in `CHANGELOG.md` with the rc version and date. A pre-commit hook (`revert_changelog_rc.py`) will revert it back to `## Unreleased` on commit, so the changelog stays clean.
@@ -84,7 +84,7 @@ uv pip install -i https://test.pypi.org/simple/ gitfluence==X.Y.Z-rc1
 For additional release candidates, bump the build number:
 
 ```bash
-bump2version build
+uv run bump2version build
 ```
 
 This increments `rc1` → `rc2`, etc. Commit, merge, tag, and push as above.
@@ -95,7 +95,7 @@ This increments `rc1` → `rc2`, etc. Commit, merge, tag, and push as above.
 
 ```bash
 git checkout -b chore/release-X.Y.Z
-bump2version release
+uv run bump2version release
 ```
 
 This removes the `-rcN` suffix, producing the final version `X.Y.Z`.
