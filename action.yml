@@ -15,10 +15,6 @@ inputs:
     description: "Preview mode — no Confluence API calls"
     required: false
     default: "false"
-  gitfluence_version:
-    description: "gitfluence version to install (e.g. '0.1.0' or 'latest')"
-    required: false
-    default: "latest"
   python_version:
     description: "Python version to use"
     required: false
@@ -55,12 +51,7 @@ runs:
 
     - name: Install gitfluence
       shell: bash
-      run: |
-        if [ "${{ inputs.gitfluence_version }}" = "latest" ]; then
-          pip install "${{ github.action_path }}"
-        else
-          pip install "gitfluence==${{ inputs.gitfluence_version }}"
-        fi
+      run: pip install "${{ github.action_path }}"
 
     - name: Sync to Confluence
       shell: bash
