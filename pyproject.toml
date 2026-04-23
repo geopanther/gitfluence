@@ -31,11 +31,13 @@ Changelog = "https://github.com/geopanther/gitfluence/blob/main/CHANGELOG.md"
 [project.scripts]
 gitfluence = "gitfluence.__main__:main"
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "bump2version",
     "identify>=2.6.19",
+    "pre-commit",
     "ruff",
+    "ty",
 ]
 test = [
     "pytest>=8.0",
@@ -53,7 +55,7 @@ build-backend = "hatchling.build"
 envlist = ["py312", "py313"]
 
 [tool.tox.env_run_base]
-extras = ["test"]
+dependency_groups = ["test"]
 commands = [
     ["pytest"],
     ["gitfluence", "--dry-run", "."],
