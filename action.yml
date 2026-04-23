@@ -57,7 +57,7 @@ runs:
       shell: bash
       run: |
         if [ "${{ inputs.gitfluence_version }}" = "latest" ]; then
-          pip install gitfluence
+          pip install "${{ github.action_path }}"
         else
           pip install "gitfluence==${{ inputs.gitfluence_version }}"
         fi
