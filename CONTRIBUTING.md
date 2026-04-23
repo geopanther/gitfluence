@@ -44,6 +44,8 @@ source setenv.sh
 <details>
 <summary><b>Windows (PowerShell)</b></summary>
 
+Follow the shared setup steps above (clone, `uv sync`, `uv run pre-commit install`), then configure environment variables:
+
 Copy `setenv.example.ps1` to `setenv.ps1` and fill in your values:
 
 ```powershell
