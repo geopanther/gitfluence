@@ -31,7 +31,8 @@ Use this to test a release on TestPyPI before publishing to production.
 ### 1. Create a branch and bump to rc version
 
 ```bash
-export NEW_VERSION_RC="${NEW_VERSION_FINAL}-rcN"
+export NEW_VERSION_FINAL="X.Y.Z" # replace with targeted release version
+export NEW_VERSION_RC="${NEW_VERSION_FINAL}-rc1"
 git checkout -b chore/bump-${NEW_VERSION_RC}
 uv run bump2version --new-version ${NEW_VERSION_RC} patch
 ```
@@ -87,7 +88,7 @@ For additional release candidates, bump the build number:
 
 ```bash
 uv run bump2version build
-export NEW_VERSION_RC="${NEW_VERSION_FINAL}-rcN"
+export NEW_VERSION_RC="${NEW_VERSION_FINAL}-rcN" # replace N with actual build number
 ```
 
 This increments `rc1` → `rc2`, etc. Commit, merge, tag, and push as above.
@@ -97,7 +98,6 @@ This increments `rc1` → `rc2`, etc. Commit, merge, tag, and push as above.
 ### 1. Create a branch and bump to final version
 
 ```bash
-export NEW_VERSION_FINAL="${NEW_VERSION_FINAL}"
 git checkout -b chore/release-${NEW_VERSION_FINAL}
 uv run bump2version release
 ```
