@@ -1,0 +1,17 @@
+[general]
+# Enable conventional commit title check (contrib rule CT1)
+regex-style-search=true
+ignore=T1,B6,body-min-length
+
+# Enable community contributed rules
+contrib=contrib-title-conventional-commits
+
+# First line must not exceed 70 characters
+[title-max-length]
+line-length=70
+
+# Body must be separated from subject by a blank line (B1 - enabled by default)
+
+### CONTRIB RULES ###
+[contrib-title-conventional-commits]
+types = feat,fix,docs,style,refactor,perf,test,build,ci,chore,revert
