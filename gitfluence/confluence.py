@@ -80,7 +80,7 @@ def run_sync(
         try:
             result = upsert_page(
                 confluence=confluence,
-                message=getattr(args, "message", None) if args else None,
+                message=(getattr(args, "message", None) or "") if args else "",
                 page=page,
                 only_changed=getattr(args, "only_changed", True) if args else True,
                 replace_all_labels=(
@@ -164,6 +164,8 @@ def _validate_relative_links(
 ) -> None:
     invalid = False
     for page in pages:
+        if page.file_path is None:
+            continue
         for link in page.relative_links:
             abs_path = (page.file_path.parent / Path(link.path)).resolve()
             if abs_path not in path_map:
@@ -197,7 +199,7 @@ def _ensure_integration_root(
 
     result = upsert_page(
         confluence=confluence,
-        message=None,
+        message="",
         page=root_page,
         only_changed=True,
         replace_all_labels=False,
@@ -246,7 +248,7 @@ def _preprocess_page(
         page.body = page.body + postface_markup
 
     # Anchor conversion
-    page.body = rewrite_page_anchors(page.body, page.title)
+    page.body = rewrite_page_anchors(page.body, page.title or "")
 
 
 def _resolve_relative_links(
@@ -283,7 +285,7 @@ def _resolve_relative_links(
             try:
                 upsert_page(
                     confluence=confluence,
-                    message=None,
+                    message="",
                     page=page,
                     only_changed=True,
                     replace_all_labels=False,

@@ -71,7 +71,11 @@ class GitfluenceContext:
             )
             self.prefix: Optional[str] = None
         else:
-            self.write_host = int_host
+            self.write_host = self._require_host(
+                int_host,
+                "CONFLUENCE_INT_HOST / CONFLUENCE_PROD_HOST",
+                dry_run=dry_run,
+            )
             self.write_token = self._require_secret(
                 settings.confluence_int_token,
                 "CONFLUENCE_INT_TOKEN",
