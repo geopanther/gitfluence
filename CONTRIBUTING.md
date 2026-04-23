@@ -8,30 +8,30 @@ The following tools must be installed on your system before setting up the proje
 
 - [git](https://git-scm.com/downloads)
 - [uv](https://docs.astral.sh/uv/getting-started/installation/)
-- [pre-commit](https://pre-commit.com/#install)
 - [osv-scanner](https://google.github.io/osv-scanner/installation/)
 
 ## Setup
 
-<details open>
-<summary><b>macOS / Linux</b></summary>
-
-````bash
+```bash
 # Clone the repo
 git clone https://github.com/geopanther/gitfluence.git
 cd gitfluence
 
 # Create a virtual environment
-uv sync --python 3.12 --extra dev --extra test
+uv sync --python 3.12 --group dev --group test
 
 # Set up pre-commit hooks
-pre-commit install
+uv run pre-commit install
+```
+
+<details open>
+<summary><b>macOS / Linux</b></summary>
 
 Copy `setenv.example.sh` to `setenv.sh` and fill in your values:
 
 ```bash
 cp setenv.example.sh setenv.sh
-````
+```
 
 Edit `setenv.sh` with your Confluence details.
 
@@ -43,18 +43,6 @@ source setenv.sh
 
 <details>
 <summary><b>Windows (PowerShell)</b></summary>
-
-```powershell
-# Clone the repo
-git clone https://github.com/geopanther/gitfluence.git
-cd gitfluence
-
-# Create a virtual environment
-uv sync --python 3.12 --extra dev --extra test
-
-# Set up pre-commit hooks
-pre-commit install
-```
 
 Copy `setenv.example.ps1` to `setenv.ps1` and fill in your values:
 
@@ -87,7 +75,15 @@ pyproject.toml      # Build config, dependencies, tool settings
 Linting runs automatically on `git-commit`, via [pre-commit](https://pre-commit.com/). To run manually:
 
 ```bash
-pre-commit run --all-files
+uv run pre-commit run --all-files
+```
+
+## Type checking
+
+[ty](https://github.com/astral-sh/ty) (Astral's type checker) runs as part of pre-commit. To run manually:
+
+```bash
+uv run ty check gitfluence
 ```
 
 ## Testing
@@ -96,13 +92,13 @@ Tests run against Python 3.12 and 3.13 via [tox](https://tox.wiki/):
 
 ```bash
 # Run tests against all configured Python versions (requires local Python 3.13 installation)
-tox
+uv run tox
 
 # Run against a single version
-tox -e py312
+uv run tox -e py312
 
 # Run pytest directly (current venv only)
-pytest
+uv run pytest
 ```
 
 Tests live in `tests/`. The test suite uses pytest, pytest-mock, pyfakefs, and requests-mock.
