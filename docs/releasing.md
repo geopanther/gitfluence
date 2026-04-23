@@ -31,8 +31,9 @@ Use this to test a release on TestPyPI before publishing to production.
 ### 1. Create a branch and bump to rc version
 
 ```bash
-git checkout -b chore/bump-X.Y.Z-rc1
-uv run bump2version --new-version X.Y.Z-rc1 patch
+export NEW_VERSION_RC="${NEW_VERSION_FINAL}-rcN"
+git checkout -b chore/bump-${NEW_VERSION_RC}
+uv run bump2version --new-version ${NEW_VERSION_RC} patch
 ```
 
 This replaces the `## Unreleased` heading in `CHANGELOG.md` with the rc version and date. A pre-commit hook (`revert_changelog_rc.py`) will revert it back to `## Unreleased` on commit, so the changelog stays clean.
@@ -40,24 +41,25 @@ This replaces the `## Unreleased` heading in `CHANGELOG.md` with the rc version 
 ### 2. Commit and merge
 
 ```bash
+uv sync
 git add -A
-git commit -m "chore: bump version to X.Y.Z-rc1"
+git commit -m "chore: bump version to ${NEW_VERSION_RC}"
 ```
 
 The first commit will fail because the `revert-changelog-rc` pre-commit hook reverts the rc heading back to `## Unreleased` and exits with code 1. This is expected — just re-run the commit:
 
 ```bash
-git add -A && git commit -m "chore: bump version to X.Y.Z-rc1"
+git add -A && git commit -m "chore: bump version to ${NEW_VERSION_RC}"
 ```
 
-Push the branch, open a PR, and wait for CI checks (`lint` and `test`) to pass before merging to `main`.
+Push the branch, open a PR, and wait for CI checks (`lint`, `test` and `type-check`) to pass before merging to `main`.
 
 ### 3. Tag and push
 
 ```bash
 git checkout main && git pull
-git tag vX.Y.Z-rc1
-git push origin vX.Y.Z-rc1
+git tag v${NEW_VERSION_RC}
+git push origin v${NEW_VERSION_RC}
 ```
 
 This triggers `deploy-test.yml`: **build → publish to TestPyPI**.
@@ -68,7 +70,7 @@ Go to the Actions tab, find the running workflow, and approve the `publish-testp
 
 ### 5. Verify on TestPyPI
 
-Check the package page at `https://test.pypi.org/project/gitfluence/X.Y.Z-rc1/` and confirm:
+Check the package page at `https://test.pypi.org/project/gitfluence/${NEW_VERSION_RC}/` and confirm:
 
 - The package is listed
 - Attestations are present (visible under "Provenance")
@@ -76,7 +78,7 @@ Check the package page at `https://test.pypi.org/project/gitfluence/X.Y.Z-rc1/` 
 To test installation:
 
 ```bash
-uv pip install -i https://test.pypi.org/simple/ gitfluence==X.Y.Z-rc1
+uv pip install -i https://test.pypi.org/simple/ gitfluence==${NEW_VERSION_RC}
 ```
 
 ### 6. Iterate if needed
@@ -85,6 +87,7 @@ For additional release candidates, bump the build number:
 
 ```bash
 uv run bump2version build
+export NEW_VERSION_RC="${NEW_VERSION_FINAL}-rcN"
 ```
 
 This increments `rc1` → `rc2`, etc. Commit, merge, tag, and push as above.
@@ -94,11 +97,12 @@ This increments `rc1` → `rc2`, etc. Commit, merge, tag, and push as above.
 ### 1. Create a branch and bump to final version
 
 ```bash
-git checkout -b chore/release-X.Y.Z
+export NEW_VERSION_FINAL="${NEW_VERSION_FINAL}"
+git checkout -b chore/release-${NEW_VERSION_FINAL}
 uv run bump2version release
 ```
 
-This removes the `-rcN` suffix, producing the final version `X.Y.Z`.
+This removes the `-rcN` suffix, producing the final version `${NEW_VERSION_FINAL}`.
 
 ### 2. Update the changelog
 
@@ -107,18 +111,19 @@ The `## Unreleased` heading was replaced by the rc bump earlier and restored by 
 ### 3. Commit and merge
 
 ```bash
+uv sync
 git add -A
-git commit -m "chore: release X.Y.Z"
+git commit -m "chore: release ${NEW_VERSION_FINAL}"
 ```
 
-Push the branch, open a PR, and wait for CI checks (`lint` and `test`) to pass before merging to `main`.
+Push the branch, open a PR, and wait for CI checks (`lint`, `test` and `type-check`) to pass before merging to `main`.
 
 ### 4. Tag and push
 
 ```bash
 git checkout main && git pull
-git tag vX.Y.Z
-git push origin vX.Y.Z
+git tag v${NEW_VERSION_FINAL}
+git push origin v${NEW_VERSION_FINAL}
 ```
 
 This triggers `deploy-prod.yml`: **build → GitHub Release → PyPI**.
@@ -131,10 +136,10 @@ Go to the Actions tab, find the running workflow, and approve the `publish-pypi`
 
 ## Workflows
 
-| Workflow          | Trigger               | Pipeline               | Environment         |
-| ----------------- | --------------------- | ---------------------- | ------------------- |
-| `deploy-test.yml` | Any `v*` tag          | build → TestPyPI       | `pypi-publish-test` |
-| `deploy-prod.yml` | `vX.Y.Z` tags (no rc) | build → release → PyPI | `pypi-publish-prod` |
+| Workflow          | Trigger                              | Pipeline               | Environment         |
+| ----------------- | ------------------------------------ | ---------------------- | ------------------- |
+| `deploy-test.yml` | Any `v*` tag                         | build → TestPyPI       | `pypi-publish-test` |
+| `deploy-prod.yml` | `v${NEW_VERSION_FINAL}` tags (no rc) | build → release → PyPI | `pypi-publish-prod` |
 
 ## Security
 
