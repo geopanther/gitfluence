@@ -23,10 +23,10 @@ $env:CONFLUENCE_SPACE = "MYSPACE"
 function uv {
     & uv.exe @args
     $rc = $LASTEXITCODE
-    if ($rc -eq 0 -and (Get-Command osv-scanner -ErrorAction SilentlyContinue)) {
+    if ($rc -eq 0) {
         if ($args[0] -in @('lock', 'add', 'remove', 'sync')) {
             Write-Host "Running osv-scanner..."
-            osv-scanner --lockfile uv.lock
+            pre-commit run osv-scanner --all-files
         }
     }
     return $rc
