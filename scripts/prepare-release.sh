@@ -40,7 +40,7 @@ UV_LOCKED=0 uv sync --all-groups
 
 # Commit all bumped files + lockfile
 git add -A
-git commit -m "Bump version: ${VERSION}"
+git commit -m "chore: bump version to ${VERSION}"
 
 # Push and create PR
 git push --set-upstream origin "${BRANCH}"
