@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -50,8 +51,16 @@ def bump_repo(tmp_path: Path) -> Path:
     repo = tmp_path / "repo"
     repo.mkdir()
 
-    # Copy real bumpversion config
-    shutil.copy(REPO_ROOT / ".bumpversion.toml", repo / ".bumpversion.toml")
+    # Copy real bumpversion config and reset current_version to test starting point
+    config_text = (REPO_ROOT / ".bumpversion.toml").read_text()
+    config_text = re.sub(
+        r'^current_version = ".*"',
+        'current_version = "0.1.0"',
+        config_text,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    (repo / ".bumpversion.toml").write_text(config_text)
 
     # Create minimal target files
     pkg = repo / "gitfluence"
