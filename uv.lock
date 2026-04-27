@@ -256,7 +256,6 @@ dev = [
     { name = "ty" },
 ]
 test = [
-    { name = "bump-my-version" },
     { name = "pyfakefs" },
     { name = "pytest" },
     { name = "pytest-mock" },
@@ -282,7 +281,6 @@ dev = [
     { name = "ty" },
 ]
 test = [
-    { name = "bump-my-version", specifier = ">=1.3.0" },
     { name = "pyfakefs" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-mock" },
