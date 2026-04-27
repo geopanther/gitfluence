@@ -17,53 +17,86 @@ All publishing uses [PyPI Trusted Publishers (OIDC)](https://docs.pypi.org/trust
 - For RC releases: approval rights on the `pypi-publish-test` GitHub environment
 - For production releases: approval rights on the `pypi-publish-prod` GitHub environment
 - Local dev environment set up (see [CONTRIBUTING.md](../CONTRIBUTING.md))
+- On up-to-date main branch without local changes.
 
 ## Version format
 
 Versions follow [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH` with optional `-rcN` suffix for release candidates.
 
-Version bumping is managed by [bump2version](https://github.com/c4urself/bump2version) via `.bumpversion.cfg`. It updates `pyproject.toml`, `gitfluence/__init__.py`, and `CHANGELOG.md` automatically.
+Version bumping is managed by [bump-my-version](https://github.com/callowayproject/bump-my-version) via `.bumpversion.toml`. It updates `pyproject.toml`, `gitfluence/__init__.py`, and `CHANGELOG.md` automatically.
+
+Two helper scripts handle the git workflow after bumping:
+
+- `scripts/prepare-release.sh` — creates branch, syncs lockfile, commits, pushes, opens PR, watches CI
+- `scripts/commit-release.sh` — checks out main, tags the release, pushes tag to trigger deployment
+
+## Preparation
+
+To avoid having to prepend all commands with `uv run`, simply activate the current environment.
+
+```bash
+. .venv/bin/activate
+```
+
+Ensure that your local `.venv` is in sync.
+
+```bash
+uv sync --locked
+```
 
 ## Release candidate
 
 Use this to test a release on TestPyPI before publishing to production.
 
-### 1. Create a branch and bump to rc version
+### 1. Bump version
+
+From the up-to-date `main` branch, bump to the desired RC version:
 
 ```bash
-export NEW_VERSION_FINAL="X.Y.Z" # replace with targeted release version
-export NEW_VERSION_RC="${NEW_VERSION_FINAL}-rc1"
-git checkout -b chore/bump-${NEW_VERSION_RC}
-uv run bump2version --new-version ${NEW_VERSION_RC} patch
+bump-my-version bump minor   # 0.1.0 → 0.2.0-rc0
 ```
 
-This replaces the `## Unreleased` heading in `CHANGELOG.md` with the rc version and date. A pre-commit hook (`revert_changelog_rc.py`) will revert it back to `## Unreleased` on commit, so the changelog stays clean.
-
-### 2. Commit and merge
+For subsequent release candidates:
 
 ```bash
-uv sync
-git add -A
-git commit -m "chore: bump version to ${NEW_VERSION_RC}"
+bump-my-version bump pre_n   # rc0 → rc1, rc1 → rc2, etc.
 ```
 
-The first commit will fail because the `revert-changelog-rc` pre-commit hook reverts the rc heading back to `## Unreleased` and exits with code 1. This is expected — just re-run the commit:
+To jump to a specific version (e.g. new minor):
 
 ```bash
-git add -A && git commit -m "chore: bump version to ${NEW_VERSION_RC}"
+bump-my-version bump minor   # 0.1.0 → 0.2.0-rc0
+bump-my-version bump pre_n   # 0.2.0-rc0 → 0.2.0-rc1
 ```
 
-Push the branch, open a PR, and wait for CI checks (`lint`, `test` and `type-check`) to pass before merging to `main`.
+Verify the result:
+
+```bash
+bump-my-version show current_version
+```
+
+### 2. Prepare and merge
+
+```bash
+./scripts/prepare-release.sh
+```
+
+This creates a branch, syncs the lockfile, commits, pushes, opens a PR, and watches CI.
+For RC versions, it also removes the RC heading from `CHANGELOG.md` (keeping only `## Unreleased`).
+
+Once CI passes, merge:
+
+```bash
+gh pr merge --merge
+```
 
 ### 3. Tag and push
 
 ```bash
-git checkout main && git pull
-git tag v${NEW_VERSION_RC}
-git push origin v${NEW_VERSION_RC}
+./scripts/commit-release.sh
 ```
 
-This triggers `deploy-test.yml`: **build → publish to TestPyPI**.
+This checks out `main`, tags `v<version>`, and pushes. Triggers `deploy-test.yml`: **build → publish to TestPyPI**.
 
 ### 4. Approve the TestPyPI publish
 
@@ -71,7 +104,7 @@ Go to the Actions tab, find the running workflow, and approve the `publish-testp
 
 ### 5. Verify on TestPyPI
 
-Check the package page at `https://test.pypi.org/project/gitfluence/${NEW_VERSION_RC}/` and confirm:
+Check the package page at `https://test.pypi.org/project/gitfluence/<VERSION>/` and confirm:
 
 - The package is listed
 - Attestations are present (visible under "Provenance")
@@ -79,60 +112,67 @@ Check the package page at `https://test.pypi.org/project/gitfluence/${NEW_VERSIO
 To test installation:
 
 ```bash
-uv pip install -i https://test.pypi.org/simple/ gitfluence==${NEW_VERSION_RC}
+uv pip install -i https://test.pypi.org/simple/ gitfluence==<VERSION>
 ```
 
 ### 6. Iterate if needed
 
-For additional release candidates, bump the build number:
-
-```bash
-uv run bump2version build
-export NEW_VERSION_RC="${NEW_VERSION_FINAL}-rcN" # replace N with actual build number
-```
-
-This increments `rc1` → `rc2`, etc. Commit, merge, tag, and push as above.
+Repeat steps 1–5 using `bump-my-version bump pre_n` to increment the RC number.
 
 ## Final release
 
-### 1. Create a branch and bump to final version
+### 1. Bump version
+
+From the up-to-date `main` branch, bump to the final version:
 
 ```bash
-git checkout -b chore/release-${NEW_VERSION_FINAL}
-uv run bump2version release
+bump-my-version bump pre_l   # e.g. 0.2.0-rc1 → 0.2.0
 ```
 
-This removes the `-rcN` suffix, producing the final version `${NEW_VERSION_FINAL}`.
-
-### 2. Update the changelog
-
-The `## Unreleased` heading was replaced by the rc bump earlier and restored by the pre-commit hook. Now `bump2version release` replaces it with the final version and date heading. Review `CHANGELOG.md` to ensure all changes for this release are captured.
-
-### 3. Commit and merge
+Verify:
 
 ```bash
-uv sync
-git add -A
-git commit -m "chore: release ${NEW_VERSION_FINAL}"
+bump-my-version show current_version
 ```
 
-Push the branch, open a PR, and wait for CI checks (`lint`, `test` and `type-check`) to pass before merging to `main`.
-
-### 4. Tag and push
+### 2. Prepare and merge
 
 ```bash
-git checkout main && git pull
-git tag v${NEW_VERSION_FINAL}
-git push origin v${NEW_VERSION_FINAL}
+./scripts/prepare-release.sh
+```
+
+Once CI passes, merge:
+
+```bash
+gh pr merge --merge
+```
+
+### 3. Tag and push
+
+```bash
+./scripts/commit-release.sh
 ```
 
 This triggers `deploy-prod.yml`: **build → GitHub Release → PyPI**.
 
 The GitHub Release is created automatically with notes extracted from `CHANGELOG.md`. The `pypi-publish-prod` environment requires manual approval before publishing to PyPI.
 
-### 5. Approve the production publish
+### 4. Approve the production publish
 
-Go to the Actions tab, find the running workflow, and approve the `publish-pypi` job when prompted. Wait for the publish job to complete successfully before proceeding.
+Go to the Actions tab, find the running workflow, and approve the `publish-pypi` job when prompted by the `pypi-publish-prod` environment gate. Wait for the publish job to complete successfully before proceeding.
+
+### 5. Verify on PyPI
+
+Check the package page at `https://pypi.org/project/gitfluence/<VERSION>/` and confirm:
+
+- The package is listed
+- Attestations are present (visible under "Provenance")
+
+To test installation:
+
+```bash
+uv pip install gitfluence==<VERSION>
+```
 
 ## Workflows
 
