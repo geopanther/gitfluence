@@ -252,15 +252,13 @@ dev = [
     { name = "bump-my-version" },
     { name = "identify" },
     { name = "pre-commit" },
-    { name = "ruff" },
-    { name = "ty" },
-]
-test = [
     { name = "pyfakefs" },
     { name = "pytest" },
     { name = "pytest-mock" },
     { name = "requests-mock" },
+    { name = "ruff" },
     { name = "tox" },
+    { name = "ty" },
 ]
 
 [package.metadata]
@@ -277,15 +275,13 @@ dev = [
     { name = "bump-my-version", specifier = ">=1.3.0" },
     { name = "identify", specifier = ">=2.6.19" },
     { name = "pre-commit" },
-    { name = "ruff" },
-    { name = "ty" },
-]
-test = [
     { name = "pyfakefs" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-mock" },
     { name = "requests-mock" },
+    { name = "ruff" },
     { name = "tox" },
+    { name = "ty" },
 ]
 
 [[package]]

@@ -17,7 +17,7 @@ git clone https://github.com/geopanther/gitfluence.git
 cd gitfluence
 
 # Create a virtual environment
-uv sync --python 3.12 --group dev --group test
+uv sync --python 3.12 --group dev
 
 # Set up pre-commit hooks
 uv run pre-commit install
