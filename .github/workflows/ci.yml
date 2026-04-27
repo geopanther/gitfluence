@@ -25,9 +25,7 @@ jobs:
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
         with:
-          extra_args: --all-files --hook-stage pre-push
-        env:
-          SKIP: tox,ty
+          extra_args: --all-files --hook-stage pre-commit
   type-check:
     runs-on: ubuntu-latest
     steps:
@@ -45,4 +43,4 @@ jobs:
         with:
           version: "0.11.7"
       - name: Test with tox
-        run: uv run --frozen --group test tox
+        run: uv run --frozen --group dev tox

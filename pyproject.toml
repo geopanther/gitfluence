@@ -33,13 +33,11 @@ gitfluence = "gitfluence.__main__:main"
 
 [dependency-groups]
 dev = [
-    "bump2version",
+    "bump-my-version>=1.3.0",
     "identify>=2.6.19",
     "pre-commit",
     "ruff",
     "ty",
-]
-test = [
     "pytest>=8.0",
     "pytest-mock",
     "pyfakefs",
@@ -55,7 +53,7 @@ build-backend = "hatchling.build"
 envlist = ["py312", "py313"]
 
 [tool.tox.env_run_base]
-dependency_groups = ["test"]
+dependency_groups = ["dev"]
 commands = [
     ["pytest"],
     ["gitfluence", "--dry-run", "."],

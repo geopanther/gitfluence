@@ -43,7 +43,6 @@ repos:
       - id: bandit
         pass_filenames: false
         args: ["-r", "gitfluence/"]
-        stages: [pre-push]
 
   - repo: https://github.com/google/osv-scanner
     rev: v2.3.5
@@ -61,20 +60,21 @@ repos:
     hooks:
       - id: ty
         name: ty - Astral type checker
-        entry: uv run ty check gitfluence
+        entry: uv run --locked --group dev ty check gitfluence
         language: system
         types: [python]
         pass_filenames: false
-      - id: revert-changelog-rc
-        name: revert changelog rc headings
-        entry: uv run scripts/revert_changelog_rc.py
-        language: system
-        files: CHANGELOG.md
-        stages: [pre-commit]
       - id: tox
         name: tox
-        entry: uv run tox -e py312
+        entry: uv run --locked --group dev tox -e py312
         language: system
         always_run: true
         pass_filenames: false
+        stages: [pre-push]
+      - id: release-lifecycle-tests
+        name: release lifecycle tests
+        entry: uv run --locked --group dev pytest scripts/test_release_lifecycle.py -v
+        language: system
+        pass_filenames: false
+        files: (\.bumpversion\.toml|scripts/(prepare-release|commit-release)\.sh|scripts/revert_changelog_rc\.py|scripts/test_release_lifecycle\.py|CHANGELOG\.md)
         stages: [pre-push]

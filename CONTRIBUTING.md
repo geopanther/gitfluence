@@ -8,7 +8,6 @@ The following tools must be installed on your system before setting up the proje
 
 - [git](https://git-scm.com/downloads)
 - [uv](https://docs.astral.sh/uv/getting-started/installation/)
-- [osv-scanner](https://google.github.io/osv-scanner/installation/)
 
 ## Setup
 
@@ -18,7 +17,7 @@ git clone https://github.com/geopanther/gitfluence.git
 cd gitfluence
 
 # Create a virtual environment
-uv sync --python 3.12 --group dev --group test
+uv sync --python 3.12 --group dev
 
 # Set up pre-commit hooks
 uv run pre-commit install
@@ -60,7 +59,7 @@ Edit setenv.ps1 with your Confluence details.
 
 </details>
 
-Sourcing `setenv.sh` (or dot-sourcing `setenv.ps1` on Windows) sets required environment variables and adds a `uv` wrapper that automatically runs `osv-scanner` after lockfile-changing commands (`uv lock`, `uv add`, `uv remove`, `uv sync`).
+Sourcing `setenv.sh` (or dot-sourcing `setenv.ps1` on Windows) sets required environment variables and adds a `uv` wrapper that automatically runs `osv-scanner` (via pre-commit) after lockfile-changing commands (`uv lock`, `uv add`, `uv remove`, `uv sync`).
 
 ## Project structure
 

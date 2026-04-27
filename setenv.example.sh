@@ -27,11 +27,11 @@ export CONFLUENCE_SPACE="MYSPACE"
 uv() {
   command uv "$@"
   local rc=$?
-  if [[ $rc -eq 0 ]] && command -v osv-scanner &>/dev/null; then
+  if [[ $rc -eq 0 ]]; then
     case "$1" in
       lock|add|remove|sync)
         echo "🔍 Running osv-scanner..."
-        osv-scanner --lockfile uv.lock
+        pre-commit run osv-scanner --all-files
         ;;
     esac
   fi
