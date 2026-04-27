@@ -22,7 +22,9 @@ if [[ "$VERSION" =~ -rc[0-9]+$ ]]; then
     BRANCH="chore/bump-${VERSION}"
     PR_TITLE="Bumping version to ${VERSION}"
     # Revert RC heading in CHANGELOG.md — keep only ## Unreleased
-    python scripts/revert_changelog_rc.py || true
+    if ! python scripts/revert_changelog_rc.py; then
+        echo "WARNING: revert_changelog_rc.py failed" >&2
+    fi
 else
     BRANCH="chore/release-${VERSION}"
     PR_TITLE="Release ${VERSION}"
