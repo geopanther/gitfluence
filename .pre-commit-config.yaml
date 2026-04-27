@@ -65,12 +65,6 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
-      - id: revert-changelog-rc
-        name: revert changelog rc headings
-        entry: uv run scripts/revert_changelog_rc.py
-        language: system
-        files: CHANGELOG.md
-        stages: [pre-commit]
       - id: tox
         name: tox
         entry: uv run tox -e py312
