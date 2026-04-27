@@ -41,7 +41,7 @@ To avoid having to prepend all commands with `uv run`, simply activate the curre
 Ensure that your local `.venv` is in sync.
 
 ```bash
-uv sync --locked
+uv sync --locked --all-groups
 ```
 
 ## Release candidate
