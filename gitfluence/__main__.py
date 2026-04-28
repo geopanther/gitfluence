@@ -21,7 +21,7 @@ log = logging.getLogger("gitfluence")
 _PACKAGE_FILES = resources.files("gitfluence")
 
 
-def main(  # pylint: disable=too-many-locals,too-many-statements
+def main(
     argv: list[str] | None = None,
 ) -> None:
     parser = argparse.ArgumentParser(
@@ -124,7 +124,7 @@ def main(  # pylint: disable=too-many-locals,too-many-statements
         "--preface-markdown",
         type=str,
         default=None,
-        help="Markdown string to prepend to every page. "
+        help="Markdown template string to prepend to every page. "
         "Supports {branch_name}, {repo_origin}, {username}, {hostname}, {timestamp} placeholders.",
     )
     preface_group.add_argument(
@@ -145,7 +145,7 @@ def main(  # pylint: disable=too-many-locals,too-many-statements
         "--postface-markdown",
         type=str,
         default=None,
-        help="Markdown string to append to every page. "
+        help="Markdown template string to append to every page. "
         "Supports {branch_name}, {repo_origin}, {username}, {hostname}, {timestamp} placeholders.",
     )
     postface_group.add_argument(
@@ -282,11 +282,11 @@ def main(  # pylint: disable=too-many-locals,too-many-statements
     preface_markup = ""
     if not getattr(args, "no_preface", False):
         if args.preface_markdown:
-            preface_markup = mdfluence.document.parse_page(  # pylint: disable=no-member
+            preface_markup = mdfluence.document.parse_page(
                 [render_template(args.preface_markdown, git_info)]
             ).body
         elif args.preface_file:
-            preface_markup = mdfluence.document.parse_page(  # pylint: disable=no-member
+            preface_markup = mdfluence.document.parse_page(
                 [
                     render_template(
                         args.preface_file.read_text(encoding="utf-8"), git_info
@@ -296,18 +296,18 @@ def main(  # pylint: disable=too-many-locals,too-many-statements
         else:
             preface_ref = _PACKAGE_FILES.joinpath("preface.md.template")
             if preface_ref.is_file():
-                preface_markup = mdfluence.document.parse_page(  # pylint: disable=no-member
+                preface_markup = mdfluence.document.parse_page(
                     [render_template(preface_ref.read_text(encoding="utf-8"), git_info)]
                 ).body
 
     postface_markup = ""
     if not getattr(args, "no_postface", False):
         if args.postface_markdown:
-            postface_markup = mdfluence.document.parse_page(  # pylint: disable=no-member
+            postface_markup = mdfluence.document.parse_page(
                 [render_template(args.postface_markdown, git_info)]
             ).body
         elif args.postface_file:
-            postface_markup = mdfluence.document.parse_page(  # pylint: disable=no-member
+            postface_markup = mdfluence.document.parse_page(
                 [
                     render_template(
                         args.postface_file.read_text(encoding="utf-8"), git_info
@@ -320,9 +320,7 @@ def main(  # pylint: disable=too-many-locals,too-many-statements
                 postface_md = render_template(
                     postface_ref.read_text(encoding="utf-8"), git_info
                 )
-                postface_markup = mdfluence.document.parse_page(  # pylint: disable=no-member
-                    [postface_md]
-                ).body
+                postface_markup = mdfluence.document.parse_page([postface_md]).body
 
     # ── Run ───────────────────────────────────────────────────────────
     run_sync(ctx, preface_markup, postface_markup, args=args)
