@@ -121,9 +121,42 @@ jobs:
 | `confluence_int_token`  | `""`       | Confluence integration API token |
 | `confluence_space`      | —          | Confluence space key             |
 
-## CLI Options (mdfluence pass-through)
+## CLI Options
 
-gitfluence supports all mdfluence options. Key groups:
+### gitfluence-specific options
+
+These options are **not** available in mdfluence:
+
+| Option             | Description                                                 |
+| ------------------ | ----------------------------------------------------------- |
+| `repo_path`        | Root directory of the git working tree to sync (positional) |
+| `--space`          | Override Confluence space key                               |
+| `--prefix`         | Override auto-detected page title prefix                    |
+| `-v` / `--verbose` | Enable debug logging                                        |
+| `--no-preface`     | Disable the default preface (DO-NOT-EDIT banner)            |
+| `--no-postface`    | Disable the default postface (metadata footer)              |
+
+### Differences from mdfluence defaults
+
+gitfluence changes the following mdfluence defaults to be **enabled by default**:
+
+| Option                        | mdfluence default | gitfluence default |
+| ----------------------------- | ----------------- | ------------------ |
+| `--strip-top-header`          | off               | **on**             |
+| `--only-changed`              | off               | **on**             |
+| `--collapse-single-pages`     | off               | **on**             |
+| `--skip-empty`                | off               | **on**             |
+| `--skip-subtrees-wo-markdown` | off               | **on**             |
+| `--enable-relative-links`     | off               | **on**             |
+
+Preface and postface behave differently from mdfluence:
+
+- **mdfluence**: `--preface-markdown` / `--postface-markdown` accept an optional value; when given without a value they default to a static "Contents are auto-generated, do not edit." message. No template placeholders.
+- **gitfluence**: Both always require a value. All preface/postface sources (CLI string, file, and bundled defaults) support `{branch_name}`, `{repo_origin}`, `{username}`, `{hostname}`, `{timestamp}` template placeholders. Bundled defaults are richer (repo origin, branch, author, timestamp).
+
+### mdfluence pass-through options
+
+All remaining mdfluence options are passed through unchanged:
 
 **Page information:** `--title`, `--content-type`, `--message`, `--minor-edit`, `--strip-top-header`, `--remove-text-newlines`, `--replace-all-labels`
 
