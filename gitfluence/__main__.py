@@ -13,7 +13,7 @@ import mdfluence.document
 from gitfluence.config import GitfluenceContext, GitfluenceSettings
 from gitfluence.confluence import run_sync
 from gitfluence.git_info import get_git_info
-from gitfluence.postface import render_postface
+from gitfluence.template import render_template
 
 log = logging.getLogger("gitfluence")
 
@@ -21,7 +21,7 @@ log = logging.getLogger("gitfluence")
 _PACKAGE_FILES = resources.files("gitfluence")
 
 
-def main(  # pylint: disable=too-many-locals,too-many-statements
+def main(
     argv: list[str] | None = None,
 ) -> None:
     parser = argparse.ArgumentParser(
@@ -124,13 +124,20 @@ def main(  # pylint: disable=too-many-locals,too-many-statements
         "--preface-markdown",
         type=str,
         default=None,
-        help="Markdown string to prepend to every page.",
+        help="Markdown template string to prepend to every page. "
+        "Supports {branch_name}, {repo_origin}, {username}, {hostname}, {timestamp} placeholders.",
     )
     preface_group.add_argument(
         "--preface-file",
         type=Path,
         default=None,
-        help="Markdown file to prepend to every page.",
+        help="Markdown template file to prepend to every page. "
+        "Supports {branch_name}, {repo_origin}, {username}, {hostname}, {timestamp} placeholders.",
+    )
+    preface_group.add_argument(
+        "--no-preface",
+        action="store_true",
+        help="Disable the default preface (DO-NOT-EDIT banner).",
     )
 
     postface_group = page_group.add_mutually_exclusive_group()
@@ -138,13 +145,20 @@ def main(  # pylint: disable=too-many-locals,too-many-statements
         "--postface-markdown",
         type=str,
         default=None,
-        help="Markdown string to append to every page.",
+        help="Markdown template string to append to every page. "
+        "Supports {branch_name}, {repo_origin}, {username}, {hostname}, {timestamp} placeholders.",
     )
     postface_group.add_argument(
         "--postface-file",
         type=Path,
         default=None,
-        help="Markdown file to append to every page.",
+        help="Markdown template file to append to every page. "
+        "Supports {branch_name}, {repo_origin}, {username}, {hostname}, {timestamp} placeholders.",
+    )
+    postface_group.add_argument(
+        "--no-postface",
+        action="store_true",
+        help="Disable the default postface (metadata footer).",
     )
 
     # ── Directory arguments ───────────────────────────────────────────
@@ -266,39 +280,47 @@ def main(  # pylint: disable=too-many-locals,too-many-statements
 
     # ── Preface / postface markup ─────────────────────────────────────
     preface_markup = ""
-    if args.preface_markdown:
-        preface_markup = mdfluence.document.parse_page(  # pylint: disable=no-member
-            [args.preface_markdown]
-        ).body
-    elif args.preface_file:
-        preface_markup = mdfluence.document.parse_page(  # pylint: disable=no-member
-            [args.preface_file.read_text(encoding="utf-8")]
-        ).body
-    else:
-        preface_ref = _PACKAGE_FILES.joinpath("preface.md")
-        if preface_ref.is_file():
-            preface_markup = mdfluence.document.parse_page(  # pylint: disable=no-member
-                [preface_ref.read_text(encoding="utf-8")]
+    if not getattr(args, "no_preface", False):
+        if args.preface_markdown:
+            preface_markup = mdfluence.document.parse_page(
+                [render_template(args.preface_markdown, git_info)]
             ).body
+        elif args.preface_file:
+            preface_markup = mdfluence.document.parse_page(
+                [
+                    render_template(
+                        args.preface_file.read_text(encoding="utf-8"), git_info
+                    )
+                ]
+            ).body
+        else:
+            preface_ref = _PACKAGE_FILES.joinpath("preface.md.template")
+            if preface_ref.is_file():
+                preface_markup = mdfluence.document.parse_page(
+                    [render_template(preface_ref.read_text(encoding="utf-8"), git_info)]
+                ).body
 
     postface_markup = ""
-    if args.postface_markdown:
-        postface_markup = mdfluence.document.parse_page(  # pylint: disable=no-member
-            [args.postface_markdown]
-        ).body
-    elif args.postface_file:
-        postface_markup = mdfluence.document.parse_page(  # pylint: disable=no-member
-            [args.postface_file.read_text(encoding="utf-8")]
-        ).body
-    else:
-        postface_ref = _PACKAGE_FILES.joinpath("postface.md.template")
-        if postface_ref.is_file():
-            postface_md = render_postface(
-                postface_ref.read_text(encoding="utf-8"), git_info
-            )
-            postface_markup = mdfluence.document.parse_page(  # pylint: disable=no-member
-                [postface_md]
+    if not getattr(args, "no_postface", False):
+        if args.postface_markdown:
+            postface_markup = mdfluence.document.parse_page(
+                [render_template(args.postface_markdown, git_info)]
             ).body
+        elif args.postface_file:
+            postface_markup = mdfluence.document.parse_page(
+                [
+                    render_template(
+                        args.postface_file.read_text(encoding="utf-8"), git_info
+                    )
+                ]
+            ).body
+        else:
+            postface_ref = _PACKAGE_FILES.joinpath("postface.md.template")
+            if postface_ref.is_file():
+                postface_md = render_template(
+                    postface_ref.read_text(encoding="utf-8"), git_info
+                )
+                postface_markup = mdfluence.document.parse_page([postface_md]).body
 
     # ── Run ───────────────────────────────────────────────────────────
     run_sync(ctx, preface_markup, postface_markup, args=args)

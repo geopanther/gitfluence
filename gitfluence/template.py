@@ -1,4 +1,4 @@
-"""Render the postface template with git / host information."""
+"""Render preface / postface templates with git & host information."""
 
 from __future__ import annotations
 
@@ -9,8 +9,12 @@ from datetime import datetime, timezone
 from gitfluence.git_info import GitInfo
 
 
-def render_postface(template: str, git_info: GitInfo) -> str:
-    """Fill ``{placeholder}`` tokens in a postface template string."""
+def render_template(template: str, git_info: GitInfo) -> str:
+    """Fill ``{placeholder}`` tokens in a template string.
+
+    Supported placeholders: ``{repo_origin}``, ``{branch_name}``,
+    ``{username}``, ``{hostname}``, ``{timestamp}``.
+    """
     return template.format(
         repo_origin=git_info.origin_url,
         branch_name=git_info.branch_name,

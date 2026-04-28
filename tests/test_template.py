@@ -1,4 +1,4 @@
-"""Unit tests for gitfluence.postface."""
+"""Unit tests for gitfluence.template."""
 
 # pylint: disable=duplicate-code
 
@@ -7,10 +7,10 @@ from __future__ import annotations
 import re
 
 from gitfluence.git_info import GitInfo
-from gitfluence.postface import render_postface
+from gitfluence.template import render_template
 
 
-class TestRenderPostface:
+class TestRenderTemplate:
     @staticmethod
     def _git_info():
         return GitInfo(
@@ -27,7 +27,7 @@ class TestRenderPostface:
             "> Generated from `{repo_origin}` | Branch: `{branch_name}` "
             "| By `{username}@{hostname}` @ {timestamp}\n"
         )
-        result = render_postface(template, self._git_info())
+        result = render_template(template, self._git_info())
         assert "git@github.com:org/repo.git" in result
         assert "main" in result
         assert "@" in result  # username@hostname
@@ -35,7 +35,7 @@ class TestRenderPostface:
 
     def test_no_leftover_braces(self):
         template = "{repo_origin} {branch_name} {username} {hostname} {timestamp}"
-        result = render_postface(template, self._git_info())
+        result = render_template(template, self._git_info())
         assert "{" not in result
         assert "}" not in result
 
@@ -49,5 +49,16 @@ class TestRenderPostface:
             is_clean=True,
             is_up_to_date=False,
         )
-        result = render_postface(template, info)
+        result = render_template(template, info)
         assert result == "branch=feat/cool-thing"
+
+    def test_preface_template_renders(self):
+        """Bundled preface template renders correctly with placeholders."""
+        template = (
+            "> ⚠️ **DO NOT EDIT**: _This content is auto-generated "
+            "from `{repo_origin}` (`{branch_name}`). Changes will be lost._"
+        )
+        result = render_template(template, self._git_info())
+        assert "git@github.com:org/repo.git" in result
+        assert "main" in result
+        assert "{" not in result
