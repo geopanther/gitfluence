@@ -68,16 +68,28 @@ Edit setenv.ps1 with your Confluence details.
 
 ## Prod vs Integration Logic
 
-| Condition                                        | Write target    | Prefix      |
-| ------------------------------------------------ | --------------- | ----------- |
-| On default branch, clean, up-to-date with remote | **Prod**        | _(none)_    |
-| Feature branch / dirty tree / behind remote      | **Integration** | Branch name |
+| Condition                                        | Write target    | Prefix   |
+| ------------------------------------------------ | --------------- | -------- |
+| On default branch, clean, up-to-date with remote | **Prod**        | _(none)_ |
+| Feature branch / dirty tree / behind remote      | **Integration** | _(none)_ |
 
 ## Page Hierarchy
 
 All root-level pages from the repo are created as children of the Confluence space's home page. Subdirectories become nested child pages.
 
-In integration mode (feature branches), an empty root page named after the repository directory is created under the space's home page. All integration pages are placed as children of this root page.
+In integration mode (feature branches), the following hierarchy is created:
+
+```
+Space Homepage
+  └── {repo-name}              (integration root)
+       └── Branch: {branch}    (branch grouping page)
+            └── Page Title     (content pages)
+                 └── Sub Page
+```
+
+- **Integration root** — an empty page named after the repository directory, created under the space homepage. Deleting it removes all integration artifacts.
+- **Branch page** — an empty page titled `Branch: {branch-name}` under the integration root. Groups all content pages for that branch. Each branch gets its own grouping page.
+- **Content pages** — the actual documentation pages, created as children of the branch page with clean titles (no branch prefix).
 
 ## GitHub Action
 

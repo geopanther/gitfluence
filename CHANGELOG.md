@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Branch grouping page (`Branch: {branch-name}`) under integration root — all content pages for a branch are now children of this page
+
+### Changed
+
+- **Breaking:** Integration page titles no longer carry the branch name as prefix; the branch page provides hierarchy context instead
 - `--no-preface` / `--no-postface` flags to disable bundled defaults
 - Template placeholder support (`{branch_name}`, `{repo_origin}`, `{username}`, `{hostname}`, `{timestamp}`) for all preface/postface sources (CLI string, file, and bundled defaults)
 - Initial public release of gitfluence
