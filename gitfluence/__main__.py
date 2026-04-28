@@ -9,6 +9,7 @@ from importlib import resources
 from pathlib import Path
 
 import mdfluence.document
+from mdfluence.__main__ import get_parser
 
 from gitfluence.config import GitfluenceContext, GitfluenceSettings
 from gitfluence.confluence import run_sync
@@ -21,103 +22,114 @@ log = logging.getLogger("gitfluence")
 _PACKAGE_FILES = resources.files("gitfluence")
 
 
-def main(
-    argv: list[str] | None = None,
-) -> None:
-    parser = argparse.ArgumentParser(
-        prog="gitfluence",
-        description="Sync markdown files from a git repo to Confluence.",
+def _remove_action(parser: argparse.ArgumentParser, dest: str) -> None:
+    """Remove an action from a parser by its dest name."""
+    for action in parser._actions[:]:
+        if action.dest == dest:
+            parser._actions.remove(action)
+            # Remove from option_string_actions mapping
+            for opt in action.option_strings:
+                parser._option_string_actions.pop(opt, None)
+            for group in parser._action_groups:
+                if action in group._group_actions:
+                    group._group_actions.remove(action)
+            # Remove from mutually exclusive groups; prune empty ones
+            for mutex in parser._mutually_exclusive_groups[:]:
+                if action in mutex._group_actions:
+                    mutex._group_actions.remove(action)
+                    if not mutex._group_actions:
+                        parser._mutually_exclusive_groups.remove(mutex)
+            break
+
+
+def _find_action(parser: argparse.ArgumentParser, dest: str) -> argparse.Action | None:
+    """Find an action by its dest name."""
+    for action in parser._actions:
+        if action.dest == dest:
+            return action
+    return None
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    """Build gitfluence CLI parser inheriting mdfluence's parser."""
+    parser = get_parser()
+    parser.prog = "gitfluence"
+    parser.description = "Sync markdown files from a git repo to Confluence."
+
+    # ── Remove mdfluence-only args ────────────────────────────────────
+    _remove_action(parser, "file_list")
+    _remove_action(parser, "output")
+
+    # Remove preface/postface (nargs="?" conflict) — will re-add below
+    for dest in (
+        "preface_markdown",
+        "preface_file",
+        "postface_markdown",
+        "postface_file",
+    ):
+        _remove_action(parser, dest)
+
+    # Remove mdfluence --prefix (different semantics) — will re-add below
+    _remove_action(parser, "prefix")
+
+    # ── Null out mdfluence env var defaults (gitfluence uses pydantic-settings) ──
+    parser.set_defaults(
+        host=None,
+        token=None,
+        username=None,
+        password=None,
+        space=None,
     )
+
+    # ── Override mdfluence defaults (sync-oriented) ───────────────────
+    parser.set_defaults(
+        only_changed=True,
+        strip_top_header=True,
+        collapse_single_pages=True,
+        skip_empty=True,
+        skip_subtrees_wo_markdown=True,
+        enable_relative_links=True,
+    )
+
+    # ── Repurpose --debug as alias for --verbose ──────────────────────
+    _remove_action(parser, "debug")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        "--debug",
+        action="store_true",
+        help="Enable debug logging.",
+    )
+
+    # ── Add -n alias to --dry-run ─────────────────────────────────────
+    dry_run_action = _find_action(parser, "dry_run")
+    if dry_run_action and "-n" not in dry_run_action.option_strings:
+        dry_run_action.option_strings = ["-n", *dry_run_action.option_strings]
+        parser._option_string_actions["-n"] = dry_run_action
+
+    # ── Add positional repo_path ──────────────────────────────────────
     parser.add_argument(
         "repo_path",
         type=Path,
         help="Root directory of the git working tree to sync.",
     )
-    parser.add_argument(
-        "-n",
-        "--dry-run",
-        action="store_true",
-        help="Print what would be done without calling the Confluence API.",
-    )
-    parser.add_argument(
-        "--space",
-        type=str,
-        default=None,
-        help="Override the Confluence space key (default: from CONFLUENCE_SPACE env var).",
-    )
+
+    # ── Add gitfluence-specific args ──────────────────────────────────
     parser.add_argument(
         "--prefix",
         type=str,
         default=None,
         help="Override auto-detected prefix (default: branch name on non-prod).",
     )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Enable debug logging.",
-    )
-    parser.add_argument(
-        "--only-changed",
-        action="store_true",
-        default=True,
-        help="Only update pages whose content has changed (default: True).",
-    )
-    parser.add_argument(
-        "--max-retries",
-        type=int,
-        default=3,
-        help="Maximum number of retries for Confluence API calls (default: 3).",
-    )
-    # ── Page information arguments ────────────────────────────────────
-    page_group = parser.add_argument_group("page information arguments")
-    page_group.add_argument(
-        "-t", "--title", type=str, default=None, help="Set the page title."
-    )
-    page_group.add_argument(
-        "-c",
-        "--content-type",
-        type=str,
-        default="page",
-        help="Content type (default: page).",
-    )
-    page_group.add_argument(
-        "-m", "--message", type=str, default=None, help="Version message for the page."
-    )
-    page_group.add_argument(
-        "--minor-edit",
-        action="store_true",
-        help="Mark the edit as a minor edit.",
-    )
-    page_group.add_argument(
-        "--strip-top-header",
-        action="store_true",
-        default=True,
-        help="Strip the top-level header from pages (default: True).",
-    )
-    page_group.add_argument(
-        "--remove-text-newlines",
-        action="store_true",
-        help="Remove newlines from text nodes.",
-    )
-    page_group.add_argument(
-        "--replace-all-labels",
-        action="store_true",
-        help="Replace all existing labels on the page.",
-    )
 
-    parent_group = page_group.add_mutually_exclusive_group()
-    parent_group.add_argument(
-        "-a", "--parent-title", type=str, default=None, help="Parent page title."
-    )
-    parent_group.add_argument(
-        "-A", "--parent-id", type=str, default=None, help="Parent page ID."
-    )
-    parent_group.add_argument(
-        "--top-level",
-        action="store_true",
-        help="Create pages as top-level children of the space.",
-    )
+    # ── Preface group (re-added with gitfluence semantics) ────────────
+    page_group = None
+    for group in parser._action_groups:
+        if group.title == "page information arguments":
+            page_group = group
+            break
+    if page_group is None:
+        page_group = parser.add_argument_group("page information arguments")
 
     preface_group = page_group.add_mutually_exclusive_group()
     preface_group.add_argument(
@@ -131,8 +143,7 @@ def main(
         "--preface-file",
         type=Path,
         default=None,
-        help="Markdown template file to prepend to every page. "
-        "Supports {branch_name}, {repo_origin}, {username}, {hostname}, {timestamp} placeholders.",
+        help="Markdown template file to prepend to every page.",
     )
     preface_group.add_argument(
         "--no-preface",
@@ -145,15 +156,13 @@ def main(
         "--postface-markdown",
         type=str,
         default=None,
-        help="Markdown template string to append to every page. "
-        "Supports {branch_name}, {repo_origin}, {username}, {hostname}, {timestamp} placeholders.",
+        help="Markdown template string to append to every page.",
     )
     postface_group.add_argument(
         "--postface-file",
         type=Path,
         default=None,
-        help="Markdown template file to append to every page. "
-        "Supports {branch_name}, {repo_origin}, {username}, {hostname}, {timestamp} placeholders.",
+        help="Markdown template file to append to every page.",
     )
     postface_group.add_argument(
         "--no-postface",
@@ -161,75 +170,49 @@ def main(
         help="Disable the default postface (metadata footer).",
     )
 
-    # ── Directory arguments ───────────────────────────────────────────
-    dir_group = parser.add_argument_group("directory arguments")
-    dir_group.add_argument(
-        "--collapse-single-pages",
-        action="store_true",
-        default=True,
-        help="Collapse directories with a single page (default: True).",
+    # ── Integration target args ───────────────────────────────────────
+    int_group = parser.add_argument_group("integration target arguments")
+    int_group.add_argument(
+        "--host-int",
+        type=str,
+        default=None,
+        help="Integration Confluence host (env: CONFLUENCE_INT_HOST).",
     )
-    dir_group.add_argument(
-        "--no-gitignore",
-        action="store_true",
-        help="Do not use .gitignore to filter files.",
+    int_group.add_argument(
+        "--token-int",
+        type=str,
+        default=None,
+        help="Integration Confluence token (env: CONFLUENCE_INT_TOKEN).",
     )
-    dir_group.add_argument(
-        "--skip-subtrees-wo-markdown",
-        action="store_true",
-        default=True,
-        help="Skip directory subtrees without markdown files (default: True).",
+    int_group.add_argument(
+        "--username-int",
+        type=str,
+        default=None,
+        help="Integration Confluence username (env: CONFLUENCE_INT_USERNAME).",
     )
-
-    dir_title_group = dir_group.add_mutually_exclusive_group()
-    dir_title_group.add_argument(
-        "--beautify-folders",
-        action="store_true",
-        help="Beautify folder names (capitalize, replace dashes/underscores).",
-    )
-    dir_title_group.add_argument(
-        "--use-pages-file",
-        action="store_true",
-        help="Use .pages files for directory titles and ordering.",
+    int_group.add_argument(
+        "--password-int",
+        type=str,
+        default=None,
+        help="Integration Confluence password (env: CONFLUENCE_INT_PASSWORD).",
     )
 
-    empty_group = dir_group.add_mutually_exclusive_group()
-    empty_group.add_argument(
-        "--collapse-empty",
-        action="store_true",
-        help="Collapse empty directories.",
-    )
-    empty_group.add_argument(
-        "--skip-empty",
-        action="store_true",
-        default=True,
-        help="Skip empty directories (default: True).",
-    )
+    return parser
 
-    # ── Relative links arguments ──────────────────────────────────────
-    links_group = parser.add_argument_group("relative links arguments")
-    links_group.add_argument(
-        "--enable-relative-links",
-        action="store_true",
-        default=True,
-        help="Enable relative link resolution (default: True).",
-    )
-    links_group.add_argument(
-        "--ignore-relative-link-errors",
-        action="store_true",
-        help="Ignore errors from unresolvable relative links.",
-    )
 
-    # ── Anchor arguments ──────────────────────────────────────────────
-    anchor_group = parser.add_argument_group("anchor arguments")
-    anchor_group.add_argument(
-        "--convert-anchors",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Convert markdown anchors to Confluence format (default: True).",
-    )
-
+def main(
+    argv: list[str] | None = None,
+) -> None:
+    parser = _build_parser()
     args = parser.parse_args(argv)
+
+    # ── Post-parse: reject --page-id ──────────────────────────────────
+    if getattr(args, "page_id", None):
+        parser.error(
+            "--page-id is not supported by gitfluence. "
+            "Pages are managed by directory hierarchy. "
+            "Use --parent-id to anchor pages under a specific parent."
+        )
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
@@ -273,10 +256,17 @@ def main(
         use_prod=use_prod,
         branch_name=branch_name,
         dry_run=args.dry_run,
+        cli_host=args.host,
+        cli_token=args.token,
+        cli_username=args.username,
+        cli_password=args.password,
+        cli_host_int=args.host_int,
+        cli_token_int=args.token_int,
+        cli_username_int=args.username_int,
+        cli_password_int=args.password_int,
+        cli_space=args.space,
+        cli_insecure=args.insecure,
     )
-
-    if args.space:
-        ctx.space = args.space
 
     # ── Preface / postface markup ─────────────────────────────────────
     preface_markup = ""

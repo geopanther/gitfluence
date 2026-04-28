@@ -55,8 +55,8 @@ def test_repo(tmp_path: Path, unique_prefix: str) -> Path:
 
 def _make_settings() -> GitfluenceSettings:
     return GitfluenceSettings(
-        confluence_prod_host="http://mock.example.com/api",
-        confluence_prod_token=SecretStr("mock-token"),
+        confluence_host="http://mock.example.com/api",
+        confluence_token=SecretStr("mock-token"),
         confluence_int_token=SecretStr("mock-int-token"),
         confluence_space="TEST",
     )

@@ -36,6 +36,9 @@ def _make_ctx(
     ctx.dry_run = dry_run
     ctx.write_host = write_host
     ctx.write_token = SecretStr(write_token)
+    ctx.write_username = None
+    ctx.write_password = None
+    ctx.insecure = False
     ctx.repo_path = Path("/tmp")
     return ctx
 
