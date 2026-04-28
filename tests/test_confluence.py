@@ -13,6 +13,7 @@ from gitfluence.config import GitfluenceContext
 from gitfluence.confluence import (
     _build_path_map,
     _collect_pages,
+    _ensure_branch_page,
     _ensure_integration_root,
     _preprocess_page,
     _validate_relative_links,
@@ -65,7 +66,24 @@ class TestPreprocessPage:
         assert page.parent_id == "12345"
         assert page.space == "TEST"
 
-    def test_top_level_uses_int_root(self):
+    def test_top_level_uses_branch_page(self):
+        page = _make_page(parent_title=None, parent_id=None)
+        ctx = _make_ctx(prefix="feat/x")
+        space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
+        root = SimpleNamespace(id="99")
+        branch_page = SimpleNamespace(id="200")
+        _preprocess_page(
+            page,
+            ctx,
+            "",
+            "",
+            space_info,
+            integration_root=root,
+            branch_page=branch_page,
+        )
+        assert page.parent_id == "200"
+
+    def test_top_level_falls_back_to_int_root(self):
         page = _make_page(parent_title=None, parent_id=None)
         ctx = _make_ctx(prefix="feat/x")
         space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
@@ -73,29 +91,40 @@ class TestPreprocessPage:
         _preprocess_page(page, ctx, "", "", space_info, integration_root=root)
         assert page.parent_id == "99"
 
-    def test_int_root_skipped_for_child(self):
+    def test_child_page_parent_title_unchanged(self):
         page = _make_page(parent_title="Parent", parent_id=None)
         ctx = _make_ctx(prefix="feat/x")
         space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
         root = SimpleNamespace(id="99")
-        _preprocess_page(page, ctx, "", "", space_info, integration_root=root)
+        branch_page = SimpleNamespace(id="200")
+        _preprocess_page(
+            page,
+            ctx,
+            "",
+            "",
+            space_info,
+            integration_root=root,
+            branch_page=branch_page,
+        )
         assert page.parent_id is None
-        assert page.parent_title == "feat/x - Parent"
+        assert page.parent_title == "Parent"
 
-    def test_prefix_applied_to_title(self):
+    def test_no_prefix_applied_to_title_when_branch_page_present(self):
         page = _make_page(title="README")
         ctx = _make_ctx(prefix="feat/x")
         space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
-        _preprocess_page(page, ctx, "", "", space_info)
-        assert page.title == "feat/x - README"
+        branch_page = SimpleNamespace(id="200")
+        _preprocess_page(page, ctx, "", "", space_info, branch_page=branch_page)
+        assert page.title == "README"
 
-    def test_prefix_applied_to_parent_title(self):
+    def test_no_prefix_applied_to_parent_title(self):
         page = _make_page(title="Child", parent_title="Parent")
         ctx = _make_ctx(prefix="dev")
         space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
-        _preprocess_page(page, ctx, "", "", space_info)
-        assert page.parent_title == "dev - Parent"
-        assert page.title == "dev - Child"
+        branch_page = SimpleNamespace(id="200")
+        _preprocess_page(page, ctx, "", "", space_info, branch_page=branch_page)
+        assert page.parent_title == "Parent"
+        assert page.title == "Child"
 
     def test_no_prefix_on_prod(self):
         page = _make_page(title="README")
@@ -103,6 +132,13 @@ class TestPreprocessPage:
         space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
         _preprocess_page(page, ctx, "", "", space_info)
         assert page.title == "README"
+
+    def test_top_level_falls_back_to_homepage_without_roots(self):
+        page = _make_page(parent_title=None, parent_id=None)
+        ctx = _make_ctx(prefix=None)
+        space_info = SimpleNamespace(homepage=SimpleNamespace(id="42"))
+        _preprocess_page(page, ctx, "", "", space_info)
+        assert page.parent_id == "42"
 
     def test_preface_prepended(self):
         page = _make_page()
@@ -196,3 +232,50 @@ class TestEnsureIntegrationRoot:
             page_arg = mock_upsert.call_args.kwargs["page"]
             assert page_arg.title == "my-awesome-repo"
             assert page_arg.parent_id == "5"
+
+
+class TestEnsureBranchPage:
+    def test_creates_branch_page_under_int_root(self):
+        confluence = MagicMock()
+        result_mock = MagicMock()
+        result_mock.action.name = "created"
+        result_mock.response.id = "300"
+
+        with patch(
+            "gitfluence.confluence.upsert_page", return_value=result_mock
+        ) as mock_upsert:
+            ctx = _make_ctx(prefix="feat/x")
+            integration_root = SimpleNamespace(id="99")
+            result = _ensure_branch_page(confluence, integration_root, ctx)
+            assert result.id == "300"
+            mock_upsert.assert_called_once()
+            page_arg = mock_upsert.call_args.kwargs["page"]
+            assert page_arg.parent_id == "99"
+
+    def test_branch_page_title_format(self):
+        confluence = MagicMock()
+        result_mock = MagicMock()
+        result_mock.action.name = "created"
+
+        with patch(
+            "gitfluence.confluence.upsert_page", return_value=result_mock
+        ) as mock_upsert:
+            ctx = _make_ctx(prefix="feat/x")
+            integration_root = SimpleNamespace(id="99")
+            _ensure_branch_page(confluence, integration_root, ctx)
+            page_arg = mock_upsert.call_args.kwargs["page"]
+            assert page_arg.title == "Branch: feat/x"
+
+    def test_branch_page_body_is_empty(self):
+        confluence = MagicMock()
+        result_mock = MagicMock()
+        result_mock.action.name = "created"
+
+        with patch(
+            "gitfluence.confluence.upsert_page", return_value=result_mock
+        ) as mock_upsert:
+            ctx = _make_ctx(prefix="feat/x")
+            integration_root = SimpleNamespace(id="99")
+            _ensure_branch_page(confluence, integration_root, ctx)
+            page_arg = mock_upsert.call_args.kwargs["page"]
+            assert page_arg.body == ""

@@ -280,7 +280,7 @@ def main(
 
     # ── Preface / postface markup ─────────────────────────────────────
     preface_markup = ""
-    if not getattr(args, "no_preface", False):
+    if not args.no_preface:
         if args.preface_markdown:
             preface_markup = mdfluence.document.parse_page(
                 [render_template(args.preface_markdown, git_info)]
@@ -301,7 +301,7 @@ def main(
                 ).body
 
     postface_markup = ""
-    if not getattr(args, "no_postface", False):
+    if not args.no_postface:
         if args.postface_markdown:
             postface_markup = mdfluence.document.parse_page(
                 [render_template(args.postface_markdown, git_info)]

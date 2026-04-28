@@ -15,10 +15,14 @@ def render_template(template: str, git_info: GitInfo) -> str:
     Supported placeholders: ``{repo_origin}``, ``{branch_name}``,
     ``{username}``, ``{hostname}``, ``{timestamp}``.
     """
-    return template.format(
-        repo_origin=git_info.origin_url,
-        branch_name=git_info.branch_name,
-        username=getpass.getuser(),
-        hostname=socket.gethostname(),
-        timestamp=datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
-    )
+    replacements = {
+        "{repo_origin}": git_info.origin_url,
+        "{branch_name}": git_info.branch_name,
+        "{username}": getpass.getuser(),
+        "{hostname}": socket.gethostname(),
+        "{timestamp}": datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+    }
+    result = template
+    for placeholder, value in replacements.items():
+        result = result.replace(placeholder, value)
+    return result

@@ -57,6 +57,7 @@ def _make_settings() -> GitfluenceSettings:
     return GitfluenceSettings(
         confluence_prod_host="http://mock.example.com/api",
         confluence_prod_token=SecretStr("mock-token"),
+        confluence_int_token=SecretStr("mock-int-token"),
         confluence_space="TEST",
     )
 
@@ -134,12 +135,15 @@ class TestFullSync:
 
 
 class TestIntegrationPrefix:
-    def test_prefix_applied_to_titles(self, mock_confluence, test_repo, unique_prefix):
+    def test_no_prefix_in_titles(self, mock_confluence, test_repo, unique_prefix):
         prefix = "feat/my-branch"
         _run_sync_with_mock(mock_confluence, test_repo, prefix=prefix)
 
-        page = mock_confluence.get_page_by_title(f"{prefix} - {unique_prefix} Root")
-        assert page is not None, "Prefixed root page not found"
+        # Content pages should have clean titles (no branch prefix)
+        page = mock_confluence.get_page_by_title(f"{unique_prefix} Root")
+        assert page is not None, (
+            f"Page '{unique_prefix} Root' not found — titles should not carry prefix"
+        )
 
     def test_integration_root_created(self, mock_confluence, test_repo, unique_prefix):
         prefix = "feat/my-branch"
@@ -150,7 +154,14 @@ class TestIntegrationPrefix:
         root = mock_confluence.get_page_by_title(repo_name)
         assert root is not None, f"Integration root '{repo_name}' not found"
 
-    def test_prefixed_pages_under_int_root(
+    def test_branch_page_created(self, mock_confluence, test_repo, unique_prefix):
+        prefix = "feat/my-branch"
+        _run_sync_with_mock(mock_confluence, test_repo, prefix=prefix)
+
+        branch_page = mock_confluence.get_page_by_title(f"Branch: {prefix}")
+        assert branch_page is not None, f"Branch page 'Branch: {prefix}' not found"
+
+    def test_branch_page_under_int_root(
         self, mock_confluence, test_repo, unique_prefix
     ):
         prefix = "feat/my-branch"
@@ -162,8 +173,21 @@ class TestIntegrationPrefix:
 
         children = mock_confluence.get_children(root.id)
         titles = [c.title for c in children]
-        assert any(prefix in t for t in titles), (
-            f"No prefixed page under integration root. Children: {titles}"
+        assert f"Branch: {prefix}" in titles, (
+            f"Branch page not under integration root. Children: {titles}"
+        )
+
+    def test_pages_under_branch_page(self, mock_confluence, test_repo, unique_prefix):
+        prefix = "feat/my-branch"
+        _run_sync_with_mock(mock_confluence, test_repo, prefix=prefix)
+
+        branch_page = mock_confluence.get_page_by_title(f"Branch: {prefix}")
+        assert branch_page is not None
+
+        children = mock_confluence.get_children(branch_page.id)
+        titles = [c.title for c in children]
+        assert any(unique_prefix in t for t in titles), (
+            f"No content page under branch page. Children: {titles}"
         )
 
 
