@@ -47,14 +47,21 @@ def run_sync(
     if ctx.dry_run:
         # In dry-run mode we skip Confluence API calls entirely
         for page in pages:
-            _preprocess_page(page, ctx, preface_markup, postface_markup, None)
+            _preprocess_page(
+                page, ctx, preface_markup, postface_markup, None, args=args
+            )
             log.info("[dry-run] Would upsert: %s", page.title)
         return
 
+    token_val = ctx.write_token.get_secret_value() if ctx.write_token else None
+    password_val = ctx.write_password.get_secret_value() if ctx.write_password else None
     confluence = MinimalConfluence(
         host=ctx.write_host,
-        token=ctx.write_token.get_secret_value(),
-        max_retries=getattr(args, "max_retries", 3) if args else 3,
+        token=token_val,
+        username=ctx.write_username,
+        password=password_val,
+        verify=not ctx.insecure,
+        max_retries=getattr(args, "max_retries", 4) if args else 4,
     )
     log.info("Connecting to Confluence at %s (space: %s)", ctx.write_host, ctx.space)
     space_info = confluence.get_space(ctx.space, additional_expansions=["homepage"])
@@ -85,6 +92,7 @@ def run_sync(
             space_info,
             integration_root=integration_root,
             branch_page=branch_page,
+            args=args,
         )
 
         try:
@@ -150,7 +158,7 @@ def _collect_pages(repo_path: Path, *, args=None) -> list[Page]:
             ),
             strip_header=(getattr(args, "strip_top_header", True) if args else True),
             use_pages_file=(getattr(args, "use_pages_file", False) if args else False),
-            use_gitignore=(not getattr(args, "no_gitignore", False) if args else True),
+            use_gitignore=(getattr(args, "use_gitignore", True) if args else True),
             enable_relative_links=(
                 getattr(args, "enable_relative_links", True) if args else True
             ),
@@ -269,10 +277,23 @@ def _preprocess_page(
     *,
     integration_root=None,
     branch_page=None,
+    args=None,
 ) -> None:
     page.original_title = page.title
     page.space = ctx.space
-    page.content_type = "page"
+    page.content_type = getattr(args, "content_type", "page") if args else "page"
+
+    # CLI parent overrides
+    if args:
+        parent_title = getattr(args, "parent_title", None)
+        parent_id = getattr(args, "parent_id", None)
+        top_level = getattr(args, "top_level", False)
+        if parent_title:
+            page.parent_title = parent_title
+        elif parent_id:
+            page.parent_id = parent_id
+        elif top_level:
+            pass  # parent_title/parent_id already None from Page init
 
     # Top-level pages → child of branch page / integration root / space homepage
     if page.parent_title is None and page.parent_id is None:
@@ -290,7 +311,8 @@ def _preprocess_page(
         page.body = page.body + postface_markup
 
     # Anchor conversion
-    page.body = rewrite_page_anchors(page.body, page.title or "")
+    if getattr(args, "convert_anchors", True) if args else True:
+        page.body = rewrite_page_anchors(page.body, page.title or "")
 
 
 def _resolve_relative_links(
