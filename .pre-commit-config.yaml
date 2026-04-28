@@ -48,14 +48,6 @@ repos:
     rev: v2.3.5
     hooks:
       - id: osv-scanner
-        args:
-          [
-            "scan",
-            "--lockfile",
-            "uv.lock",
-            "--format=vertical",
-            "--verbosity=error",
-          ]
         files: uv\.lock
 
   - repo: https://github.com/jorisroovers/gitlint
