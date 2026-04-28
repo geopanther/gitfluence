@@ -62,3 +62,10 @@ class TestRenderTemplate:
         assert "git@github.com:org/repo.git" in result
         assert "main" in result
         assert "{" not in result
+
+    def test_literal_braces_preserved(self):
+        """Literal curly braces in user template don't cause errors."""
+        template = "Use {curly} braces in docs {repo_origin}"
+        result = render_template(template, self._git_info())
+        assert "{curly}" in result
+        assert "git@github.com:org/repo.git" in result
