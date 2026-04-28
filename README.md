@@ -129,9 +129,15 @@ gitfluence supports all mdfluence options. Key groups:
 
 **Parent selection** (mutually exclusive): `--parent-title` / `--parent-id` / `--top-level`
 
-**Preface** (mutually exclusive): `--preface-markdown` / `--preface-file`
+**Preface** (mutually exclusive): `--preface-markdown` / `--preface-file` / `--no-preface`
 
-**Postface** (mutually exclusive): `--postface-markdown` / `--postface-file`
+> By default a "DO NOT EDIT" banner with repo origin and branch name is prepended.
+> All preface sources support `{branch_name}`, `{repo_origin}`, `{username}`, `{hostname}`, `{timestamp}` placeholders.
+
+**Postface** (mutually exclusive): `--postface-markdown` / `--postface-file` / `--no-postface`
+
+> By default a metadata footer with repo origin, branch, author and timestamp is appended.
+> All postface sources support the same placeholders as preface.
 
 **Directory:** `--collapse-single-pages`, `--no-gitignore`, `--skip-subtrees-wo-markdown`
 
