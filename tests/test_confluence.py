@@ -109,7 +109,7 @@ class TestPreprocessPage:
         assert page.parent_id is None
         assert page.parent_title == "Parent"
 
-    def test_no_prefix_applied_to_title_on_int(self):
+    def test_no_prefix_applied_to_title_when_branch_page_present(self):
         page = _make_page(title="README")
         ctx = _make_ctx(prefix="feat/x")
         space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
@@ -132,6 +132,13 @@ class TestPreprocessPage:
         space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
         _preprocess_page(page, ctx, "", "", space_info)
         assert page.title == "README"
+
+    def test_top_level_falls_back_to_homepage_without_roots(self):
+        page = _make_page(parent_title=None, parent_id=None)
+        ctx = _make_ctx(prefix=None)
+        space_info = SimpleNamespace(homepage=SimpleNamespace(id="42"))
+        _preprocess_page(page, ctx, "", "", space_info)
+        assert page.parent_id == "42"
 
     def test_preface_prepended(self):
         page = _make_page()
