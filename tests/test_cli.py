@@ -31,3 +31,51 @@ class TestCLI:
             ctx = mock_sync.call_args[0][0]
             assert ctx.dry_run is True
             assert ctx.write_token.get_secret_value() == "dummy"
+
+
+class TestNoPreface:
+    def test_no_preface_disables_default(self, tmp_repo, monkeypatch):
+        monkeypatch.setenv("CONFLUENCE_PROD_HOST", "https://prod.example.com/api")
+        monkeypatch.delenv("CONFLUENCE_PROD_TOKEN", raising=False)
+        monkeypatch.delenv("CONFLUENCE_INT_TOKEN", raising=False)
+        monkeypatch.delenv("CONFLUENCE_INT_HOST", raising=False)
+        with patch("gitfluence.__main__.run_sync") as mock_sync:
+            main(["--dry-run", "--no-preface", str(tmp_repo)])
+            mock_sync.assert_called_once()
+            preface_markup = mock_sync.call_args[0][1]
+            assert preface_markup == ""
+
+    def test_no_postface_disables_default(self, tmp_repo, monkeypatch):
+        monkeypatch.setenv("CONFLUENCE_PROD_HOST", "https://prod.example.com/api")
+        monkeypatch.delenv("CONFLUENCE_PROD_TOKEN", raising=False)
+        monkeypatch.delenv("CONFLUENCE_INT_TOKEN", raising=False)
+        monkeypatch.delenv("CONFLUENCE_INT_HOST", raising=False)
+        with patch("gitfluence.__main__.run_sync") as mock_sync:
+            main(["--dry-run", "--no-postface", str(tmp_repo)])
+            mock_sync.assert_called_once()
+            postface_markup = mock_sync.call_args[0][2]
+            assert postface_markup == ""
+
+    def test_default_preface_not_empty(self, tmp_repo, monkeypatch):
+        """Without --no-preface, default bundled preface is applied."""
+        monkeypatch.setenv("CONFLUENCE_PROD_HOST", "https://prod.example.com/api")
+        monkeypatch.delenv("CONFLUENCE_PROD_TOKEN", raising=False)
+        monkeypatch.delenv("CONFLUENCE_INT_TOKEN", raising=False)
+        monkeypatch.delenv("CONFLUENCE_INT_HOST", raising=False)
+        with patch("gitfluence.__main__.run_sync") as mock_sync:
+            main(["--dry-run", str(tmp_repo)])
+            mock_sync.assert_called_once()
+            preface_markup = mock_sync.call_args[0][1]
+            assert preface_markup != ""
+
+    def test_default_postface_not_empty(self, tmp_repo, monkeypatch):
+        """Without --no-postface, default bundled postface is applied."""
+        monkeypatch.setenv("CONFLUENCE_PROD_HOST", "https://prod.example.com/api")
+        monkeypatch.delenv("CONFLUENCE_PROD_TOKEN", raising=False)
+        monkeypatch.delenv("CONFLUENCE_INT_TOKEN", raising=False)
+        monkeypatch.delenv("CONFLUENCE_INT_HOST", raising=False)
+        with patch("gitfluence.__main__.run_sync") as mock_sync:
+            main(["--dry-run", str(tmp_repo)])
+            mock_sync.assert_called_once()
+            postface_markup = mock_sync.call_args[0][2]
+            assert postface_markup != ""
