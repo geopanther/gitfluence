@@ -22,15 +22,21 @@ gitfluence --beautify-folders .          # pass mdfluence options
 
 ## Environment Variables
 
-| Variable                | Required | Description                                                 |
-| ----------------------- | -------- | ----------------------------------------------------------- |
-| `CONFLUENCE_PROD_HOST`  | Yes      | Production Confluence REST API base URL                     |
-| `CONFLUENCE_PROD_TOKEN` | Yes\*    | PAT for production writes                                   |
-| `CONFLUENCE_INT_HOST`   | No       | Integration Confluence REST API base URL (defaults to prod) |
-| `CONFLUENCE_INT_TOKEN`  | No\*     | PAT for integration writes                                  |
-| `CONFLUENCE_SPACE`      | Yes\*    | Confluence space key                                        |
+| Variable                  | Required | Description                                                 |
+| ------------------------- | -------- | ----------------------------------------------------------- |
+| `CONFLUENCE_HOST`         | Yes      | Confluence REST API base URL                                |
+| `CONFLUENCE_TOKEN`        | Yes\*    | PAT for Confluence (token > username/password)              |
+| `CONFLUENCE_USERNAME`     | No       | Username for basic auth                                     |
+| `CONFLUENCE_PASSWORD`     | No       | Password for basic auth                                     |
+| `CONFLUENCE_INT_HOST`     | No       | Integration Confluence REST API base URL (defaults to prod) |
+| `CONFLUENCE_INT_TOKEN`    | No\*     | PAT for integration writes                                  |
+| `CONFLUENCE_INT_USERNAME` | No       | Username for integration basic auth                         |
+| `CONFLUENCE_INT_PASSWORD` | No       | Password for integration basic auth                         |
+| `CONFLUENCE_SPACE`        | Yes\*    | Confluence space key                                        |
 
 \* On `--dry-run`, missing host defaults to `https://dummy.example.com/api`, missing tokens default to `dummy` and missing space defaults to `DRY_RUN`. In interactive mode, missing values are prompted.
+
+Auth decision (per target): token > username+password > prompt > dry-run dummy.
 
 <details open>
 <summary><b>macOS / Linux</b></summary>
@@ -113,25 +119,25 @@ jobs:
         with:
           repo_path: "."
           extra_args: "--beautify-folders"
-          confluence_prod_host: ${{ secrets.CONFLUENCE_PROD_HOST }}
-          confluence_prod_token: ${{ secrets.CONFLUENCE_PROD_TOKEN }}
+          confluence_host: ${{ secrets.CONFLUENCE_HOST }}
+          confluence_token: ${{ secrets.CONFLUENCE_TOKEN }}
           confluence_space: ${{ secrets.CONFLUENCE_SPACE }}
 ```
 
 ### Action inputs
 
-| Input                   | Default    | Description                      |
-| ----------------------- | ---------- | -------------------------------- |
-| `repo_path`             | `"."`      | Root directory to sync           |
-| `dry_run`               | `"false"`  | Preview mode                     |
-| `gitfluence_version`    | `"latest"` | Version to install               |
-| `python_version`        | `"3.12"`   | Python version                   |
-| `extra_args`            | `""`       | Additional CLI args              |
-| `confluence_prod_host`  | —          | Confluence production host URL   |
-| `confluence_prod_token` | —          | Confluence production API token  |
-| `confluence_int_host`   | `""`       | Confluence integration host URL  |
-| `confluence_int_token`  | `""`       | Confluence integration API token |
-| `confluence_space`      | —          | Confluence space key             |
+| Input                  | Default    | Description                      |
+| ---------------------- | ---------- | -------------------------------- |
+| `repo_path`            | `"."`      | Root directory to sync           |
+| `dry_run`              | `"false"`  | Preview mode                     |
+| `gitfluence_version`   | `"latest"` | Version to install               |
+| `python_version`       | `"3.12"`   | Python version                   |
+| `extra_args`           | `""`       | Additional CLI args              |
+| `confluence_host`      | —          | Confluence host URL              |
+| `confluence_token`     | —          | Confluence API token             |
+| `confluence_int_host`  | `""`       | Confluence integration host URL  |
+| `confluence_int_token` | `""`       | Confluence integration API token |
+| `confluence_space`     | —          | Confluence space key             |
 
 ## CLI Options
 
@@ -139,14 +145,21 @@ jobs:
 
 These options are **not** available in mdfluence:
 
-| Option             | Description                                                 |
-| ------------------ | ----------------------------------------------------------- |
-| `repo_path`        | Root directory of the git working tree to sync (positional) |
-| `--space`          | Override Confluence space key                               |
-| `--prefix`         | Override auto-detected page title prefix                    |
-| `-v` / `--verbose` | Enable debug logging                                        |
-| `--no-preface`     | Disable the default preface (DO-NOT-EDIT banner)            |
-| `--no-postface`    | Disable the default postface (metadata footer)              |
+| Option                         | Description                                                 |
+| ------------------------------ | ----------------------------------------------------------- |
+| `repo_path`                    | Root directory of the git working tree to sync (positional) |
+| `--space`                      | Override Confluence space key                               |
+| `--prefix`                     | Override auto-detected page title prefix                    |
+| `-v` / `--verbose` / `--debug` | Enable debug logging                                        |
+| `-n` (alias for `--dry-run`)   | Print what would be done without calling API                |
+| `--no-preface`                 | Disable the default preface (DO-NOT-EDIT banner)            |
+| `--no-postface`                | Disable the default postface (metadata footer)              |
+| `--host-int`                   | Integration Confluence host (env: CONFLUENCE_INT_HOST)      |
+| `--token-int`                  | Integration Confluence token (env: CONFLUENCE_INT_TOKEN)    |
+| `--username-int`               | Integration Confluence username                             |
+| `--password-int`               | Integration Confluence password                             |
+
+> **Note:** `--page-id` is not supported. Pages are managed by directory hierarchy. Use `--parent-id` to anchor pages under a specific parent.
 
 ### Differences from mdfluence defaults
 
@@ -170,7 +183,9 @@ Preface and postface behave differently from mdfluence:
 
 All remaining mdfluence options are passed through unchanged:
 
-**Page information:** `--title`, `--content-type`, `--message`, `--minor-edit`, `--strip-top-header`, `--remove-text-newlines`, `--replace-all-labels`
+**Login:** `--host` / `-o`, `--token`, `--username` / `-u`, `--password` / `-p`, `--insecure`
+
+**Page information:** `--title`, `--content-type` (choices: page/blogpost), `--message`, `--minor-edit`, `--strip-top-header`, `--remove-text-newlines`, `--replace-all-labels`
 
 **Parent selection** (mutually exclusive): `--parent-title` / `--parent-id` / `--top-level`
 
