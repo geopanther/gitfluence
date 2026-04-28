@@ -56,12 +56,18 @@ def run_sync(
     log.info("Connecting to Confluence at %s (space: %s)", ctx.write_host, ctx.space)
     space_info = confluence.get_space(ctx.space, additional_expansions=["homepage"])
 
-    # ── 3b. Integration root page ─────────────────────────────────────
+    # ── 3b. Integration root page & branch page ──────────────────────
     integration_root = None
+    branch_page = None
     if ctx.prefix:
         integration_root = _ensure_integration_root(
             confluence,
             space_info,
+            ctx,
+        )
+        branch_page = _ensure_branch_page(
+            confluence,
+            integration_root,
             ctx,
         )
 
@@ -75,6 +81,7 @@ def run_sync(
             postface_markup,
             space_info,
             integration_root=integration_root,
+            branch_page=branch_page,
         )
 
         try:
@@ -213,6 +220,40 @@ def _ensure_integration_root(
     return result.response
 
 
+def _ensure_branch_page(
+    confluence: MinimalConfluence,
+    integration_root,
+    ctx: GitfluenceContext,
+):
+    """Upsert an empty branch page under the integration root.
+
+    The branch page is titled 'Branch: {branch-name}' and serves as the
+    parent for all content pages of that branch.
+    """
+    branch_page = Page(
+        space=ctx.space,
+        title=f"Branch: {ctx.prefix}",
+        body="",
+        content_type="page",
+    )
+    branch_page.parent_id = integration_root.id
+
+    result = upsert_page(
+        confluence=confluence,
+        message="",
+        page=branch_page,
+        only_changed=True,
+        replace_all_labels=False,
+        minor_edit=True,
+    )
+    log.info(
+        "Branch page '%s' (%s)",
+        branch_page.title,
+        result.action.name,
+    )
+    return result.response
+
+
 def _preprocess_page(
     page: Page,
     ctx: GitfluenceContext,
@@ -221,25 +262,20 @@ def _preprocess_page(
     space_info,
     *,
     integration_root=None,
+    branch_page=None,
 ) -> None:
     page.original_title = page.title
     page.space = ctx.space
     page.content_type = "page"
 
-    # Apply prefix to parent title (non-top-level pages)
-    if page.parent_title is not None and ctx.prefix:
-        page.parent_title = f"{ctx.prefix} - {page.parent_title}"
-
-    # Top-level pages → child of integration root (int) or space homepage (prod)
+    # Top-level pages → child of branch page / integration root / space homepage
     if page.parent_title is None and page.parent_id is None:
-        if integration_root is not None:
+        if branch_page is not None:
+            page.parent_id = branch_page.id
+        elif integration_root is not None:
             page.parent_id = integration_root.id
         elif space_info is not None:
             page.parent_id = space_info.homepage.id
-
-    # Apply prefix to page title
-    if ctx.prefix:
-        page.title = f"{ctx.prefix} - {page.title}"
 
     # Preface / postface
     if preface_markup:
