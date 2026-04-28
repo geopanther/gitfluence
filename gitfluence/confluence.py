@@ -38,7 +38,10 @@ def run_sync(
 
     # ── 2. Build relative-link map (filled in during upsert) ──────────
     path_to_page: dict[Path, Page | None] = _build_path_map(pages)
-    _validate_relative_links(pages, path_to_page)
+    ignore_link_errors = (
+        getattr(args, "ignore_relative_link_errors", False) if args else False
+    )
+    _validate_relative_links(pages, path_to_page, ignore_errors=ignore_link_errors)
 
     # ── 3. Fetch space info for --top-level ───────────────────────────
     if ctx.dry_run:
@@ -167,7 +170,10 @@ def _build_path_map(pages: list[Page]) -> dict[Path, Page | None]:
 
 
 def _validate_relative_links(
-    pages: list[Page], path_map: dict[Path, Page | None]
+    pages: list[Page],
+    path_map: dict[Path, Page | None],
+    *,
+    ignore_errors: bool = False,
 ) -> None:
     invalid = False
     for page in pages:
@@ -182,7 +188,7 @@ def _validate_relative_links(
                     link.path,
                 )
                 invalid = True
-    if invalid:
+    if invalid and not ignore_errors:
         raise SystemExit("ERROR: Invalid relative links detected.")
 
 
