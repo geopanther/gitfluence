@@ -17,7 +17,7 @@ classifiers = [
 ]
 dependencies = [
     "mdfluence>=0.2.1",
-    "gitpython>=3.1.46",
+    "gitpython>=3.1.47",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
     "identify>=2.6.19",
