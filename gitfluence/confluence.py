@@ -283,8 +283,10 @@ def _preprocess_page(
     page.space = ctx.space
     page.content_type = getattr(args, "content_type", "page") if args else "page"
 
-    # CLI parent overrides
-    if args:
+    # CLI parent overrides — only for root-level pages (no parent from directory structure).
+    # Child pages already have parent_title set by mdfluence's get_pages_from_directory.
+    is_root_page = page.parent_title is None and page.parent_id is None
+    if args and is_root_page:
         parent_title = getattr(args, "parent_title", None)
         parent_id = getattr(args, "parent_id", None)
         top_level = getattr(args, "top_level", False)
@@ -295,7 +297,7 @@ def _preprocess_page(
         elif top_level:
             pass  # parent_title/parent_id already None from Page init
 
-    # Top-level pages → child of branch page / integration root / space homepage
+    # Root pages without an explicit parent → child of branch page / integration root / homepage
     if page.parent_title is None and page.parent_id is None:
         if branch_page is not None:
             page.parent_id = branch_page.id
