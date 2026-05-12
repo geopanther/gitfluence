@@ -6,7 +6,6 @@ import logging
 from pathlib import Path
 
 import mdfluence.document
-from mdfluence.anchor import rewrite_page_anchors
 from mdfluence.api import MinimalConfluence
 from mdfluence.document import Page
 from mdfluence.upsert import upsert_attachment, upsert_page
@@ -165,6 +164,15 @@ def _collect_pages(repo_path: Path, *, args=None) -> list[Page]:
             skip_subtrees_wo_markdown=(
                 getattr(args, "skip_subtrees_wo_markdown", True) if args else True
             ),
+            enable_emoji=(not getattr(args, "disable_emoji", False) if args else True),
+            convert_anchors=(
+                not getattr(args, "disable_anchor_convert", False) if args else False
+            ),
+            render_diagrams=(
+                getattr(args, "render_diagrams", False) if args else False
+            ),
+            mmdc_path=getattr(args, "mmdc_path", None) if args else None,
+            plantuml_path=getattr(args, "plantuml_path", None) if args else None,
         )
     )
 
@@ -283,6 +291,11 @@ def _preprocess_page(
     page.space = ctx.space
     page.content_type = getattr(args, "content_type", "page") if args else "page"
 
+    # CLI --title override (single-page only — validated at call site)
+    title_override = getattr(args, "title", None) if args else None
+    if title_override and page.title:
+        page.title = title_override
+
     # CLI parent overrides — only for root-level pages (no parent from directory structure).
     # Child pages already have parent_title set by mdfluence's get_pages_from_directory.
     is_root_page = page.parent_title is None and page.parent_id is None
@@ -296,6 +309,9 @@ def _preprocess_page(
             page.parent_id = parent_id
         elif top_level:
             pass  # parent_title/parent_id already None from Page init
+    elif page.parent_title is not None and ctx.prefix:
+        # Child pages: prefix parent_title so they find the prefixed parent
+        page.parent_title = f"{ctx.prefix} - {page.parent_title}"
 
     # Root pages without an explicit parent → child of branch page / integration root / homepage
     if page.parent_title is None and page.parent_id is None:
@@ -306,15 +322,24 @@ def _preprocess_page(
         elif space_info is not None:
             page.parent_id = space_info.homepage.id
 
+    # --top-level: anchor to homepage so pages can be moved back to top
+    if (
+        getattr(args, "top_level", False)
+        and page.parent_title is None
+        and page.parent_id is None
+        and space_info is not None
+    ):
+        page.parent_id = space_info.homepage.id
+
+    # Prefix page titles (integration mode)
+    if ctx.prefix:
+        page.title = f"{ctx.prefix} - {page.title}"
+
     # Preface / postface
     if preface_markup:
         page.body = preface_markup + page.body
     if postface_markup:
         page.body = page.body + postface_markup
-
-    # Anchor conversion
-    if getattr(args, "convert_anchors", True) if args else True:
-        page.body = rewrite_page_anchors(page.body, page.title or "")
 
 
 def _resolve_relative_links(

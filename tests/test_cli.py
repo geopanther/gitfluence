@@ -89,9 +89,9 @@ class TestDefaultOverrides:
         args = _parse(["."])
         assert args.max_retries == 4
 
-    def test_default_convert_anchors_true(self):
+    def test_default_disable_anchor_convert_false(self):
         args = _parse(["."])
-        assert args.convert_anchors is True
+        assert args.disable_anchor_convert is False
 
 
 # ── 1c. gitfluence-specific args ─────────────────────────────────────────

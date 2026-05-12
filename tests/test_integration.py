@@ -135,14 +135,15 @@ class TestFullSync:
 
 
 class TestIntegrationPrefix:
-    def test_no_prefix_in_titles(self, mock_confluence, test_repo, unique_prefix):
+    def test_prefix_in_titles(self, mock_confluence, test_repo, unique_prefix):
         prefix = "feat/my-branch"
         _run_sync_with_mock(mock_confluence, test_repo, prefix=prefix)
 
-        # Content pages should have clean titles (no branch prefix)
-        page = mock_confluence.get_page_by_title(f"{unique_prefix} Root")
+        # Content pages should have prefixed titles in integration mode
+        page = mock_confluence.get_page_by_title(f"{prefix} - {unique_prefix} Root")
         assert page is not None, (
-            f"Page '{unique_prefix} Root' not found — titles should not carry prefix"
+            f"Page '{prefix} - {unique_prefix} Root' not found — "
+            "titles should carry prefix in integration mode"
         )
 
     def test_integration_root_created(self, mock_confluence, test_repo, unique_prefix):
