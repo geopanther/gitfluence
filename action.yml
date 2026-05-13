@@ -23,11 +23,11 @@ inputs:
     description: "Additional CLI arguments passed to gitfluence (e.g. '--skip-empty --beautify-folders')"
     required: false
     default: ""
-  confluence_prod_host:
-    description: "Confluence production host URL"
+  confluence_host:
+    description: "Confluence host URL"
     required: true
-  confluence_prod_token:
-    description: "Confluence production API token"
+  confluence_token:
+    description: "Confluence API token"
     required: true
   confluence_int_host:
     description: "Confluence integration host URL"
@@ -56,8 +56,8 @@ runs:
     - name: Sync to Confluence
       shell: bash
       env:
-        CONFLUENCE_PROD_HOST: ${{ inputs.confluence_prod_host }}
-        CONFLUENCE_PROD_TOKEN: ${{ inputs.confluence_prod_token }}
+        CONFLUENCE_HOST: ${{ inputs.confluence_host }}
+        CONFLUENCE_TOKEN: ${{ inputs.confluence_token }}
         CONFLUENCE_INT_HOST: ${{ inputs.confluence_int_host }}
         CONFLUENCE_INT_TOKEN: ${{ inputs.confluence_int_token }}
         CONFLUENCE_SPACE: ${{ inputs.confluence_space }}

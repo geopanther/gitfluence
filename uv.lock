@@ -245,6 +245,7 @@ dependencies = [
     { name = "mdfluence" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+    { name = "urllib3" },
 ]
 
 [package.dev-dependencies]
@@ -263,11 +264,12 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "gitpython", specifier = ">=3.1.46" },
+    { name = "gitpython", specifier = ">=3.1.50" },
     { name = "identify", specifier = ">=2.6.19" },
-    { name = "mdfluence", specifier = ">=0.2.1" },
+    { name = "mdfluence", specifier = ">=0.4.0" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pydantic-settings", specifier = ">=2.0" },
+    { name = "urllib3", specifier = ">=2.7.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -292,14 +294,14 @@ sdist = { url = "https://files.pythonhosted.org/packages/91/ae/d983db08d9c5f3dd5
 
 [[package]]
 name = "gitpython"
-version = "3.1.46"
+version = "3.1.50"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "gitdb" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/df/b5/59d16470a1f0dfe8c793f9ef56fd3826093fc52b3bd96d6b9d6c26c7e27b/gitpython-3.1.46.tar.gz", hash = "sha256:400124c7d0ef4ea03f7310ac2fbf7151e09ff97f2a3288d64a440c584a29c37f", size = 215371, upload-time = "2026-01-01T15:37:32.073Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/f6/354ae6491228b5eb40e10d89c4d13c651fe1cf7556e35ebdded50cff57ce/gitpython-3.1.50.tar.gz", hash = "sha256:80da2d12504d52e1f998772dc5baf6e553f8d2fcfe1fcc226c9d9a2ee3372dcc", size = 219798, upload-time = "2026-05-06T04:01:26.571Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6a/09/e21df6aef1e1ffc0c816f0522ddc3f6dcded766c3261813131c78a704470/gitpython-3.1.46-py3-none-any.whl", hash = "sha256:79812ed143d9d25b6d176a10bb511de0f9c67b1fa641d82097b0ab90398a2058", size = 208620, upload-time = "2026-01-01T15:37:30.574Z" },
+    { url = "https://files.pythonhosted.org/packages/20/7a/1c6e3562dfd8950adbb11ffbc65d21e7c89d01a6e4f137fa981056de25c5/gitpython-3.1.50-py3-none-any.whl", hash = "sha256:d352abe2908d07355014abdd21ddf798c2a961469239afec4962e9da884858f9", size = 212507, upload-time = "2026-05-06T04:01:23.799Z" },
 ]
 
 [[package]]
@@ -380,7 +382,7 @@ wheels = [
 
 [[package]]
 name = "mdfluence"
-version = "0.2.1"
+version = "0.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "chardet" },
@@ -390,10 +392,11 @@ dependencies = [
     { name = "requests" },
     { name = "rich" },
     { name = "rich-argparse" },
+    { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/40/c7/a328cbd6b446f28c38b52f6c68eb065b3151ea0990588187e01fc95c2678/mdfluence-0.2.1.tar.gz", hash = "sha256:9f663b0423312b8dfb38ca00cc71d7d4570188d94442ca0d9a6a32f81ea7bec9", size = 30659, upload-time = "2026-04-16T15:47:20.287Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/89/dc/659ed4a2484a2f1eda6f213352cd43bb234d6954de736b1192743c6cd19d/mdfluence-0.4.0.tar.gz", hash = "sha256:a46b70fc6f05d2a543e67b43ba4a52dfe6bceb58469b9ba69ad4518d7aed1a6a", size = 109683, upload-time = "2026-05-12T19:30:53.189Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1a/db/61e70f2b774956dcf6e4bbc2083f1c26517cdf0b83ebe2760f474a1fe22c/mdfluence-0.2.1-py3-none-any.whl", hash = "sha256:2969be1f1c0e0012abefcec7188d7d4b43b2b666ae0bc0038994b80fef580623", size = 27999, upload-time = "2026-04-16T15:47:19.229Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/0f/037e3c81f41cbf0dacb99e6d9bbbec73c5a053d430f8e9a42598cad7f12c/mdfluence-0.4.0-py3-none-any.whl", hash = "sha256:17145ed2677a94374d017d56e63fb08a79da8c592d92ec903154f140ff083926", size = 50298, upload-time = "2026-05-12T19:30:51.42Z" },
 ]
 
 [[package]]
@@ -407,11 +410,11 @@ wheels = [
 
 [[package]]
 name = "mistune"
-version = "0.8.4"
+version = "3.2.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/2d/a4/509f6e7783ddd35482feda27bc7f72e65b5e7dc910eca4ab2164daf9c577/mistune-0.8.4.tar.gz", hash = "sha256:59a3429db53c50b5c6bcc8a07f8848cb00d7dc8bdb431a4ab41920d201d4756e", size = 58322, upload-time = "2018-10-11T06:59:27.908Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ca/84/620cc3f7e3adf6f5067e10f4dbae71295d8f9e16d5d3f9ef97c40f2f592c/mistune-3.2.1.tar.gz", hash = "sha256:7c8e5501d38bac1582e067e46c8343f17d57ea1aaa735823f3aba1fd59c88a28", size = 98003, upload-time = "2026-05-03T14:33:22.312Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/09/ec/4b43dae793655b7d8a25f76119624350b4d65eb663459eb9603d7f1f0345/mistune-0.8.4-py2.py3-none-any.whl", hash = "sha256:88a1051873018da288eee8538d476dffe1262495144b33ecb586c4ab266bb8d4", size = 16220, upload-time = "2018-10-11T06:59:26.044Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/7f/a946aa4f8752b37102b41e64dca18a1976ac705c3a0d1dfe74d820a02552/mistune-3.2.1-py3-none-any.whl", hash = "sha256:78cdb0ba5e938053ccf63651b352508d2efa9411dc8810bfb05f2dc5140c0048", size = 53749, upload-time = "2026-05-03T14:33:20.551Z" },
 ]
 
 [[package]]
@@ -906,11 +909,11 @@ wheels = [
 
 [[package]]
 name = "urllib3"
-version = "2.6.3"
+version = "2.7.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c7/24/5f1b3bdffd70275f6661c76461e25f024d5a38a46f04aaca912426a2b1d3/urllib3-2.6.3.tar.gz", hash = "sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed", size = 435556, upload-time = "2026-01-07T16:24:43.925Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c", size = 433602, upload-time = "2026-05-07T16:13:18.596Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/39/08/aaaad47bc4e9dc8c725e68f9d04865dbcb2052843ff09c97b08904852d84/urllib3-2.6.3-py3-none-any.whl", hash = "sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4", size = 131584, upload-time = "2026-01-07T16:24:42.685Z" },
+    { url = "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897", size = 131087, upload-time = "2026-05-07T16:13:17.151Z" },
 ]
 
 [[package]]

@@ -4,13 +4,13 @@ if ($MyInvocation.InvocationName -ne '.') {
     exit 1
 }
 
-# Required: Confluence REST API base URL for production writes
-$env:CONFLUENCE_PROD_HOST = "https://your-confluence.example.com/confluence/rest/api"
+# Required: Confluence REST API base URL
+$env:CONFLUENCE_HOST = "https://your-confluence.example.com/confluence/rest/api"
 
-# Required: Personal Access Token for production Confluence
-$env:CONFLUENCE_PROD_TOKEN = "your-prod-token"
+# Required: Personal Access Token for Confluence
+$env:CONFLUENCE_TOKEN = "your-token"
 
-# Optional: Separate integration Confluence instance (defaults to CONFLUENCE_PROD_HOST)
+# Optional: Separate integration Confluence instance (defaults to CONFLUENCE_HOST)
 # $env:CONFLUENCE_INT_HOST = "https://your-confluence-int.example.com/confluence/rest/api"
 
 # Optional: Token for integration instance (prompted interactively if unset)

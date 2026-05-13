@@ -36,6 +36,9 @@ def _make_ctx(
     ctx.dry_run = dry_run
     ctx.write_host = write_host
     ctx.write_token = SecretStr(write_token)
+    ctx.write_username = None
+    ctx.write_password = None
+    ctx.insecure = False
     ctx.repo_path = Path("/tmp")
     return ctx
 
@@ -107,24 +110,31 @@ class TestPreprocessPage:
             branch_page=branch_page,
         )
         assert page.parent_id is None
-        assert page.parent_title == "Parent"
+        assert page.parent_title == "feat/x - Parent"
 
-    def test_no_prefix_applied_to_title_when_branch_page_present(self):
+    def test_prefix_applied_to_title_when_prefix_set(self):
         page = _make_page(title="README")
         ctx = _make_ctx(prefix="feat/x")
         space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
         branch_page = SimpleNamespace(id="200")
         _preprocess_page(page, ctx, "", "", space_info, branch_page=branch_page)
-        assert page.title == "README"
+        assert page.title == "feat/x - README"
 
-    def test_no_prefix_applied_to_parent_title(self):
+    def test_prefix_applied_to_parent_title(self):
         page = _make_page(title="Child", parent_title="Parent")
         ctx = _make_ctx(prefix="dev")
         space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
         branch_page = SimpleNamespace(id="200")
         _preprocess_page(page, ctx, "", "", space_info, branch_page=branch_page)
-        assert page.parent_title == "Parent"
-        assert page.title == "Child"
+        assert page.parent_title == "dev - Parent"
+        assert page.title == "dev - Child"
+
+    def test_no_prefix_on_prod_title(self):
+        page = _make_page(title="README")
+        ctx = _make_ctx(prefix=None)
+        space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
+        _preprocess_page(page, ctx, "", "", space_info)
+        assert page.title == "README"
 
     def test_no_prefix_on_prod(self):
         page = _make_page(title="README")
@@ -155,6 +165,66 @@ class TestPreprocessPage:
         space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
         _preprocess_page(page, ctx, "", "<p>postface</p>", space_info)
         assert page.body.endswith("<p>postface</p>")
+
+    # ── --parent-id / --parent-title propagation ──────────────────────
+
+    def test_parent_id_applies_to_root_page(self):
+        page = _make_page(parent_title=None, parent_id=None)
+        ctx = _make_ctx()
+        space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
+        args = SimpleNamespace(
+            parent_id="999",
+            parent_title=None,
+            top_level=False,
+            content_type="page",
+            convert_anchors=True,
+        )
+        _preprocess_page(page, ctx, "", "", space_info, args=args)
+        assert page.parent_id == "999"
+
+    def test_parent_id_does_not_apply_to_child_page(self):
+        page = _make_page(parent_title="DirPage", parent_id=None)
+        ctx = _make_ctx()
+        space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
+        args = SimpleNamespace(
+            parent_id="999",
+            parent_title=None,
+            top_level=False,
+            content_type="page",
+            convert_anchors=True,
+        )
+        _preprocess_page(page, ctx, "", "", space_info, args=args)
+        # Child keeps its directory-based parent, not CLI --parent-id
+        assert page.parent_title == "DirPage"
+        assert page.parent_id is None
+
+    def test_parent_title_applies_to_root_page(self):
+        page = _make_page(parent_title=None, parent_id=None)
+        ctx = _make_ctx()
+        space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
+        args = SimpleNamespace(
+            parent_id=None,
+            parent_title="MyParent",
+            top_level=False,
+            content_type="page",
+            convert_anchors=True,
+        )
+        _preprocess_page(page, ctx, "", "", space_info, args=args)
+        assert page.parent_title == "MyParent"
+
+    def test_parent_title_does_not_apply_to_child_page(self):
+        page = _make_page(parent_title="DirPage", parent_id=None)
+        ctx = _make_ctx()
+        space_info = SimpleNamespace(homepage=SimpleNamespace(id="1"))
+        args = SimpleNamespace(
+            parent_id=None,
+            parent_title="MyParent",
+            top_level=False,
+            content_type="page",
+            convert_anchors=True,
+        )
+        _preprocess_page(page, ctx, "", "", space_info, args=args)
+        assert page.parent_title == "DirPage"
 
 
 class TestBuildPathMap:
