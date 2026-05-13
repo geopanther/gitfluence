@@ -58,7 +58,7 @@ UV_LOCKED=0 uv sync --all-groups
 
 # Commit only bumped files + lockfile
 git add pyproject.toml gitfluence/__init__.py CHANGELOG.md uv.lock
-git commit --no-edit -m "Bump version: ${VERSION}"
+git commit --no-edit -m "chore: Bump version: ${VERSION}"
 
 # Push and create PR
 git push --set-upstream origin "${BRANCH}"
