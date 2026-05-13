@@ -3,7 +3,7 @@ name: Build and publish to TestPyPI
 on:
   push:
     tags:
-      - "v*"
+      - "v*-rc*"
   workflow_dispatch:
 
 permissions:
