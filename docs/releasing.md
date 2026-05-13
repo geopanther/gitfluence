@@ -17,7 +17,7 @@ All publishing uses [PyPI Trusted Publishers (OIDC)](https://docs.pypi.org/trust
 - For RC releases: approval rights on the `pypi-publish-test` GitHub environment
 - For production releases: approval rights on the `pypi-publish-prod` GitHub environment
 - Local dev environment set up (see [CONTRIBUTING.md](../CONTRIBUTING.md))
-- On up-to-date main branch without local changes.
+- On the default branch, in sync with remote (enforced by `merge-bump.sh`).
 
 ## Version format
 
@@ -27,8 +27,8 @@ Version bumping is managed by [bump-my-version](https://github.com/callowayproje
 
 Two helper scripts handle the git workflow after bumping:
 
-- `scripts/prepare-release.sh` — creates branch, syncs lockfile, commits, pushes, opens PR, watches CI
-- `scripts/commit-release.sh` — checks out main, tags the release, pushes tag to trigger deployment
+- `scripts/merge-bump.sh` — creates branch, syncs lockfile, commits, pushes, opens PR, watches CI, and squash-merges
+- `scripts/publish-release.sh` — checks out main, tags the release, pushes tag to trigger deployment
 
 ## Preparation
 
@@ -41,7 +41,7 @@ To avoid having to prepend all commands with `uv run`, simply activate the curre
 Ensure that your local `.venv` is in sync.
 
 ```bash
-uv sync --locked --all-groups
+uv sync --locked
 ```
 
 ## Release candidate
@@ -50,23 +50,16 @@ Use this to test a release on TestPyPI before publishing to production.
 
 ### 1. Bump version
 
-From the up-to-date `main` branch, bump to the desired RC version:
+From the up-to-date `main` branch, bump to the desired RC version (`0.2.1` → `0.3.0-rc0`):
 
 ```bash
-bump-my-version bump minor   # 0.1.0 → 0.2.0-rc0
+bump-my-version bump minor
 ```
 
-For subsequent release candidates:
+For subsequent release candidates (`rc0` → `rc1`, `rc1` → `rc2`, etc.):
 
 ```bash
-bump-my-version bump pre_n   # rc0 → rc1, rc1 → rc2, etc.
-```
-
-To jump to a specific version (e.g. new minor):
-
-```bash
-bump-my-version bump minor   # 0.1.0 → 0.2.0-rc0
-bump-my-version bump pre_n   # 0.2.0-rc0 → 0.2.0-rc1
+bump-my-version bump pre_n
 ```
 
 Verify the result:
@@ -78,22 +71,16 @@ bump-my-version show current_version
 ### 2. Prepare and merge
 
 ```bash
-./scripts/prepare-release.sh
+./scripts/merge-bump.sh
 ```
 
-This creates a branch, syncs the lockfile, commits, pushes, opens a PR, and watches CI.
-For RC versions, it also removes the RC heading from `CHANGELOG.md` (keeping only `## Unreleased`).
-
-Once CI passes, merge:
-
-```bash
-gh pr merge --merge
-```
+This creates a branch, syncs the lockfile, commits, pushes, opens a PR, watches CI
+and squash-merges it. For RC versions, it removes the RC heading from `CHANGELOG.md` (keeping only `## Unreleased`).
 
 ### 3. Tag and push
 
 ```bash
-./scripts/commit-release.sh
+./scripts/publish-release.sh
 ```
 
 This checks out `main`, tags `v<version>`, and pushes. Triggers `deploy-test.yml`: **build → publish to TestPyPI**.
@@ -109,10 +96,10 @@ Check the package page at `https://test.pypi.org/project/gitfluence/<VERSION>/` 
 - The package is listed
 - Attestations are present (visible under "Provenance")
 
-To test installation:
+To test installation (uses `--index-strategy unsafe-best-match` so dependencies resolve from PyPI while pulling gitfluence from TestPyPI):
 
 ```bash
-uv pip install -i https://test.pypi.org/simple/ gitfluence==<VERSION>
+uv pip install --extra-index-url https://test.pypi.org/simple/ --index-strategy unsafe-best-match gitfluence==<VERSION>
 ```
 
 ### 6. Iterate if needed
@@ -123,10 +110,10 @@ Repeat steps 1–5 using `bump-my-version bump pre_n` to increment the RC number
 
 ### 1. Bump version
 
-From the up-to-date `main` branch, bump to the final version:
+From the up-to-date `main` branch, bump to the final version (e.g. `0.3.0-rc1` → `0.3.0`):
 
 ```bash
-bump-my-version bump pre_l   # e.g. 0.2.0-rc1 → 0.2.0
+bump-my-version bump pre_l
 ```
 
 Verify:
@@ -138,19 +125,13 @@ bump-my-version show current_version
 ### 2. Prepare and merge
 
 ```bash
-./scripts/prepare-release.sh
-```
-
-Once CI passes, merge:
-
-```bash
-gh pr merge --merge
+./scripts/merge-bump.sh
 ```
 
 ### 3. Tag and push
 
 ```bash
-./scripts/commit-release.sh
+./scripts/publish-release.sh
 ```
 
 This triggers `deploy-prod.yml`: **build → GitHub Release → PyPI**.
@@ -176,10 +157,10 @@ uv pip install gitfluence==<VERSION>
 
 ## Workflows
 
-| Workflow          | Trigger                              | Pipeline               | Environment         |
-| ----------------- | ------------------------------------ | ---------------------- | ------------------- |
-| `deploy-test.yml` | Any `v*` tag                         | build → TestPyPI       | `pypi-publish-test` |
-| `deploy-prod.yml` | `v${NEW_VERSION_FINAL}` tags (no rc) | build → release → PyPI | `pypi-publish-prod` |
+| Workflow          | Trigger                         | Pipeline               | Environment         |
+| ----------------- | ------------------------------- | ---------------------- | ------------------- |
+| `deploy-test.yml` | `v*-rc*` tags (RC only)         | build → TestPyPI       | `pypi-publish-test` |
+| `deploy-prod.yml` | `v[0-9]+.[0-9]+.[0-9]+` (no rc) | build → release → PyPI | `pypi-publish-prod` |
 
 ## Security
 
