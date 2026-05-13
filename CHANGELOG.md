@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.2.0] - 2026-05-13
+
 ### Added
 
 - Full mdfluence CLI option parity: `--disable-emoji`, `--disable-anchor-convert`, `--render-diagrams`, `--mmdc-path`, `--plantuml-path`, `--title`, `--parent-id`, `--parent-title`, `--top-level`, `--insecure`, `--content-type`
