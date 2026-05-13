@@ -76,5 +76,5 @@ repos:
         entry: uv run --locked --group dev pytest scripts/test_release_lifecycle.py -v
         language: system
         pass_filenames: false
-        files: (\.bumpversion\.toml|scripts/(prepare-release|commit-release)\.sh|scripts/revert_changelog_rc\.py|scripts/test_release_lifecycle\.py|CHANGELOG\.md)
+        files: (\.bumpversion\.toml|scripts/(merge-bump|publish-release)\.sh|scripts/revert_changelog_rc\.py|scripts/test_release_lifecycle\.py|CHANGELOG\.md)
         stages: [pre-push]
