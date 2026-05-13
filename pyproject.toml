@@ -1,6 +1,6 @@
 [project]
 name = "gitfluence"
-version = "0.2.0-rc0"
+version = "0.2.0-rc1"
 description = "Sync markdown files from a git repo to Confluence as a page hierarchy"
 readme = "README.md"
 license = "MIT"
